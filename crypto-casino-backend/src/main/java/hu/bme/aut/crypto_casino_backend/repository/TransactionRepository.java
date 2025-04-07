@@ -9,12 +9,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    List<Transaction> findByUser(User user);
-    List<Transaction> findByWallet(Wallet wallet);
+    List<Transaction> findByUserOrderByTransactionTimeDesc(User user);
     Page<Transaction> findByUser(User user, Pageable pageable);
-    Optional<Transaction> findByTransactionHash(String transactionHash);
+    List<Transaction> findByWalletOrderByTransactionTimeDesc(Wallet wallet);
+    Page<Transaction> findByWallet(Wallet wallet, Pageable pageable);
+    List<Transaction> findByTypeAndStatusOrderByTransactionTimeDesc(
+            Transaction.TransactionType type, Transaction.TransactionStatus status);
+
+    long countByUserAndType(User user, Transaction.TransactionType type);
 }

@@ -2,6 +2,7 @@ plugins {
 	java
 	id("org.springframework.boot") version "3.4.4"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("org.web3j") version "4.13.0"
 }
 
 group = "hu.bme.aut"
@@ -37,6 +38,7 @@ dependencies {
 	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("org.springframework.security:spring-security-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	implementation("org.web3j:core:4.12.3")
 
 	val mapStructVersion = "1.6.3"
 	implementation("org.mapstruct:mapstruct:$mapStructVersion")
@@ -50,4 +52,8 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+tasks.named("processResources") {
+	dependsOn(":generateContractWrappers")
 }

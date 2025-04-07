@@ -31,28 +31,48 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(name = "ethereum_address")
-    private String ethereumAddress;
-
-    @Enumerated(EnumType.STRING)
-    private KycStatus kycStatus;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    @Enumerated(EnumType.STRING)
+    private KycStatus kycStatus;
+
+    @Column(name = "wallet_initialized", nullable = false)
+    private boolean walletInitialized;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Wallet wallet;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Transaction> transactions = new HashSet<>();
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (kycStatus == null) {
+            kycStatus = KycStatus.NOT_STARTED;
+        }
+        if (role == null) {
+            role = Role.USER;
+        }
+    }
 
     public enum KycStatus {
         NOT_STARTED,
         PENDING,
         VERIFIED,
         REJECTED
+    }
+
+    public enum Role {
+        USER,
+        ADMIN
     }
 }

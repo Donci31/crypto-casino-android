@@ -38,7 +38,7 @@ public interface UserMapper {
             try {
                 user.setKycStatus(User.KycStatus.valueOf(userDto.getKycStatus()));
             } catch (IllegalArgumentException e) {
-                // Log or handle invalid enum values
+
             }
         }
     }

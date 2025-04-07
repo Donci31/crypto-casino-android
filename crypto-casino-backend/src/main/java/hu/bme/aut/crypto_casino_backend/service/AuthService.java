@@ -50,15 +50,6 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        Wallet wallet = Wallet.builder()
-                .user(savedUser)
-                .casinoTokenBalance(BigDecimal.ZERO)
-                .walletAddress(registrationDto.getEthereumAddress())
-                .blockchainSynced(false)
-                .build();
-
-        walletRepository.save(wallet);
-
         return userMapper.toDto(savedUser);
     }
 
