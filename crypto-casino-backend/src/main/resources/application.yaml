@@ -32,7 +32,7 @@ web3j:
   gas-limit: 6721975
   contract:
     casino-token: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
-    casino-wallet: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    casino-vault: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
 
 wallet:
   master-wallet:

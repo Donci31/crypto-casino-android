@@ -1,4 +1,4 @@
-package hu.bme.aut.crypto_casino_backend.dto;
+package hu.bme.aut.crypto_casino_backend.dto.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -37,6 +37,4 @@ public class UserDto {
     private LocalDateTime createdAt;
 
     private LocalDateTime lastLogin;
-
-    private WalletSummaryDto wallet;
 }

@@ -30,7 +30,6 @@ class TransactionsViewModel @Inject constructor(
 
     init {
         getTransactions()
-        getTransactionStats()
     }
 
     fun getTransactions(refresh: Boolean = false) {
@@ -82,15 +81,6 @@ class TransactionsViewModel @Inject constructor(
             transactionRepository.getTransactionById(id)
                 .collect { result ->
                     _transactionState.value = result
-                }
-        }
-    }
-
-    fun getTransactionStats() {
-        viewModelScope.launch {
-            transactionRepository.getTransactionStats()
-                .collect { result ->
-                    _transactionStatsState.value = result
                 }
         }
     }

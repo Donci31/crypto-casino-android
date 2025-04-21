@@ -1,6 +1,6 @@
 package hu.bme.aut.crypto_casino_backend.service;
 
-import hu.bme.aut.crypto_casino_backend.dto.UserDto;
+import hu.bme.aut.crypto_casino_backend.dto.user.UserDto;
 import hu.bme.aut.crypto_casino_backend.exception.ResourceNotFoundException;
 import hu.bme.aut.crypto_casino_backend.model.User;
 import hu.bme.aut.crypto_casino_backend.repository.UserRepository;
@@ -34,23 +34,5 @@ public class UserService {
         existingUser.setUsername(userDto.getUsername());
 
         return existingUser;
-    }
-
-    public String getUsernameFromLoginCredential(String usernameOrEmail) {
-        if (usernameOrEmail.contains("@")) {
-            Optional<User> userOpt = userRepository.findByEmail(usernameOrEmail);
-            if (userOpt.isPresent()) {
-                return userOpt.get().getUsername();
-            }
-        }
-
-        return usernameOrEmail;
-    }
-
-    @Transactional
-    public User updateLastLogin(String username) {
-        User user = getUserByUsername(username);
-        user.setLastLogin(LocalDateTime.now());
-        return userRepository.save(user);
     }
 }

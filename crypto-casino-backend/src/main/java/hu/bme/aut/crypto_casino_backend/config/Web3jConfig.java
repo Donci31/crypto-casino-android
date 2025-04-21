@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.web3j.casinotoken.CasinoToken;
-import org.web3j.casinowallet.CasinoWallet;
+import org.web3j.casinovault.CasinoVault;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
@@ -32,8 +32,8 @@ public class Web3jConfig {
     @Value("${web3j.contract.casino-token}")
     private String casinoTokenAddress;
 
-    @Value("${web3j.contract.casino-wallet}")
-    private String casinoWalletAddress;
+    @Value("${web3j.contract.casino-vault}")
+    private String casinoVaultAddress;
 
     @Value("${wallet.master-wallet.private-key}")
     private String masterWalletPrivateKey;
@@ -69,9 +69,9 @@ public class Web3jConfig {
     }
 
     @Bean
-    public CasinoWallet casinoWallet(Web3j web3j, Credentials credentials, ContractGasProvider gasProvider) {
-        return CasinoWallet.load(
-                casinoWalletAddress,
+    public CasinoVault casinoWallet(Web3j web3j, Credentials credentials, ContractGasProvider gasProvider) {
+        return CasinoVault.load(
+                casinoVaultAddress,
                 web3j,
                 credentials,
                 gasProvider

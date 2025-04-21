@@ -13,7 +13,4 @@ interface TransactionApi {
 
     @GET("transactions/{id}")
     suspend fun getTransactionById(@Path("id") id: Long): Response<Transaction>
-
-    @GET("transactions/stats")
-    suspend fun getTransactionStats(): Response<Map<String, Long>>
 }

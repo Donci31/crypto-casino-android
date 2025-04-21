@@ -1,4 +1,4 @@
-package hu.bme.aut.crypto_casino_backend.dto;
+package hu.bme.aut.crypto_casino_backend.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

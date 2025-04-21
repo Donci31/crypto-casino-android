@@ -2,7 +2,6 @@ package hu.bme.aut.crypto_casino_android.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -28,8 +27,6 @@ import hu.bme.aut.crypto_casino_android.ui.screens.home.HomeScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.profile.ProfileScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.transactions.TransactionDetailScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.transactions.TransactionsScreen
-import hu.bme.aut.crypto_casino_android.ui.screens.wallet.ExchangeScreen
-import hu.bme.aut.crypto_casino_android.ui.screens.wallet.WalletScreen
 
 @Composable
 fun NavGraph(
@@ -77,22 +74,6 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.Wallet.route) {
-            WalletScreen(
-                onNavigateToExchange = {
-                    navController.navigate(Screen.Exchange.route)
-                }
-            )
-        }
-
-        composable(Screen.Exchange.route) {
-            ExchangeScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
         composable(Screen.Transactions.route) {
             TransactionsScreen(
                 onTransactionClick = { transactionId ->
@@ -134,7 +115,6 @@ fun NavGraph(
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         NavigationItem.Home,
-        NavigationItem.Wallet,
         NavigationItem.Transactions,
         NavigationItem.Profile
     )
@@ -167,7 +147,6 @@ fun BottomNavigationBar(navController: NavController) {
 
 sealed class NavigationItem(val route: String, val icon: ImageVector, val title: String) {
     object Home : NavigationItem(Screen.Home.route, Icons.Default.Home, "Home")
-    object Wallet : NavigationItem(Screen.Wallet.route, Icons.Default.AccountBalanceWallet, "Wallet")
     object Transactions : NavigationItem(Screen.Transactions.route,
         Icons.AutoMirrored.Filled.List, "Transactions")
     object Profile : NavigationItem(Screen.Profile.route, Icons.Default.Person, "Profile")

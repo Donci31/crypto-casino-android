@@ -1,9 +1,9 @@
 package hu.bme.aut.crypto_casino_backend.controller;
 
-import hu.bme.aut.crypto_casino_backend.dto.AuthResponseDto;
-import hu.bme.aut.crypto_casino_backend.dto.UserDto;
-import hu.bme.aut.crypto_casino_backend.dto.UserLoginDto;
-import hu.bme.aut.crypto_casino_backend.dto.UserRegistrationDto;
+import hu.bme.aut.crypto_casino_backend.dto.user.AuthResponseDto;
+import hu.bme.aut.crypto_casino_backend.dto.user.UserDto;
+import hu.bme.aut.crypto_casino_backend.dto.user.UserLoginDto;
+import hu.bme.aut.crypto_casino_backend.dto.user.UserRegistrationDto;
 import hu.bme.aut.crypto_casino_backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package hu.bme.aut.crypto_casino_backend.controller;
 
-import hu.bme.aut.crypto_casino_backend.dto.UserDto;
+import hu.bme.aut.crypto_casino_backend.dto.user.UserDto;
 import hu.bme.aut.crypto_casino_backend.mapper.UserMapper;
 import hu.bme.aut.crypto_casino_backend.model.User;
 import hu.bme.aut.crypto_casino_backend.service.UserService;

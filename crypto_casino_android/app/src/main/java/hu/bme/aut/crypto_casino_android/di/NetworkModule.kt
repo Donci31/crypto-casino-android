@@ -6,10 +6,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import hu.bme.aut.crypto_casino_android.BuildConfig
 import hu.bme.aut.crypto_casino_android.data.api.AuthApi
-import hu.bme.aut.crypto_casino_android.data.api.BlockchainApi
 import hu.bme.aut.crypto_casino_android.data.api.TransactionApi
 import hu.bme.aut.crypto_casino_android.data.api.UserApi
-import hu.bme.aut.crypto_casino_android.data.api.WalletApi
 import hu.bme.aut.crypto_casino_android.data.local.TokenManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -87,18 +85,6 @@ object NetworkModule {
     @Provides
     fun provideUserApi(retrofit: Retrofit): UserApi {
         return retrofit.create(UserApi::class.java)
-    }
-
-    @Singleton
-    @Provides
-    fun provideBlockchainApi(retrofit: Retrofit): BlockchainApi {
-        return retrofit.create(BlockchainApi::class.java)
-    }
-
-    @Singleton
-    @Provides
-    fun provideWalletApi(retrofit: Retrofit): WalletApi {
-        return retrofit.create(WalletApi::class.java)
     }
 
     @Singleton

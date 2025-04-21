@@ -4,71 +4,45 @@ pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/**
- * @title CasinoToken
- * @dev ERC20 Token for the Crypto Casino with master wallet architecture
- * This will be used for transactions within the casino platform
- */
 contract CasinoToken is ERC20, Ownable {
-    
-    // Events
-    event TokensPurchased(address indexed buyer, uint256 amount, address indexed operator);
-    event TokensWithdrawn(address indexed player, uint256 amount, address indexed operator);
-    
-    // Constructor sets the token name and symbol
+    uint256 public rate = 1000;
+
+    event TokensPurchased(address indexed userAddress, uint256 tokenAmount, uint256 timestamp);
+    event TokensExchanged(address indexed userAddress, uint256 tokenAmount, uint256 timestamp);
+
     constructor() ERC20("CasinoToken", "CST") Ownable(msg.sender) {
-        // Mint initial supply to the contract owner (casino)
         _mint(msg.sender, 1000000 * 10 ** decimals());
     }
-    
-    /**
-     * @dev Allows the casino operator to purchase tokens for a user
-     * @param user Address of the user to receive tokens
-     */
-    function purchaseTokensFor(address user) external payable onlyOwner {
+
+    function purchaseTokens() external payable {
         require(msg.value > 0, "Must send ETH to purchase tokens");
-        require(user != address(0), "Invalid user address");
-        
-        // Simple 1:100 conversion (1 ETH = 100 CST)
-        uint256 tokenAmount = msg.value * 100;
-        
-        // Transfer tokens to the user
-        _transfer(owner(), user, tokenAmount);
-        
-        emit TokensPurchased(user, tokenAmount, msg.sender);
+
+        uint256 tokenAmount = msg.value * rate;
+
+        _transfer(owner(), msg.sender, tokenAmount);
+
+        emit TokensPurchased(msg.sender, tokenAmount, block.timestamp);
     }
-    
-    /**
-     * @dev Allows the casino operator to withdraw user tokens back to ETH
-     * @param user Address of the user exchanging tokens
-     * @param amount The amount of tokens to withdraw
-     */
-    function withdrawTokensFor(address user, uint256 amount) external onlyOwner {
-        require(amount > 0, "Amount must be greater than 0");
-        require(balanceOf(user) >= amount, "Insufficient balance");
-        
-        // Calculate ETH amount (reverse of purchase rate)
-        uint256 ethAmount = amount / 100;
-        
-        // Check if contract has enough ETH
+
+    function exchangeTokens(uint256 tokenAmount) external {
+        require(tokenAmount > 0, "Amount must be greater than 0");
+        require(balanceOf(msg.sender) >= tokenAmount, "Insufficient token balance");
+
+        uint256 ethAmount = tokenAmount / rate;
+
         require(address(this).balance >= ethAmount, "Insufficient ETH in contract");
-        
-        // Transfer tokens from user to owner (requires allowance)
-        transferFrom(user, owner(), amount);
-        
-        // Transfer ETH to user
-        payable(user).transfer(ethAmount);
-        
-        emit TokensWithdrawn(user, amount, msg.sender);
+
+        _transfer(msg.sender, owner(), tokenAmount);
+
+        payable(msg.sender).transfer(ethAmount);
+
+        emit TokensExchanged(msg.sender, tokenAmount, block.timestamp);
     }
-    
-    /**
-     * @dev Allows the owner to withdraw ETH from the contract
-     */
+
     function withdrawEth() external onlyOwner {
         uint256 balance = address(this).balance;
         require(balance > 0, "No ETH to withdraw");
-        
+
         payable(owner()).transfer(balance);
     }
 }

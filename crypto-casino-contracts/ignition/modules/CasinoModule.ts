@@ -5,9 +5,11 @@ const CasinoModule = buildModule("CasinoModule", (m) => {
   const casinoToken = m.contract("CasinoToken");
 
   // Deploy CasinoWallet with the address of the CasinoToken
-  const casinoWallet = m.contract("CasinoWallet", [casinoToken]);
+  const casinoVault = m.contract("CasinoVault", [casinoToken]);
 
-  return { casinoToken, casinoWallet };
+  const slotMachine = m.contract("SlotMachine", [casinoVault, 10, 1000, 1]);
+
+  return { casinoToken, casinoVault, slotMachine };
 });
 
 export default CasinoModule;

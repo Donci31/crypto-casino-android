@@ -25,31 +25,18 @@ public class Transaction {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "wallet_id", nullable = false)
-    private Wallet wallet;
-
-    @Column(nullable = false)
-    private BigDecimal amount;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionType type;
 
+    @Column(nullable = false)
+    private BigDecimal amount;
+
     @Column(name = "transaction_hash")
     private String transactionHash;
 
-    @Column(name = "block_number")
-    private Long blockNumber;
-
-    @Column(name = "ethereum_amount")
-    private BigDecimal ethereumAmount;
-
-    @Column(name = "casino_token_amount")
-    private BigDecimal casinoTokenAmount;
-
-    @Column(name = "transaction_time", nullable = false)
-    private LocalDateTime transactionTime;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -58,8 +45,6 @@ public class Transaction {
     public enum TransactionType {
         DEPOSIT,
         WITHDRAWAL,
-        EXCHANGE_ETH_TO_TOKEN,
-        EXCHANGE_TOKEN_TO_ETH,
         BET,
         WIN
     }
@@ -67,7 +52,6 @@ public class Transaction {
     public enum TransactionStatus {
         PENDING,
         COMPLETED,
-        FAILED,
-        CANCELLED
+        FAILED
     }
 }

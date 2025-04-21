@@ -30,18 +30,6 @@ object RepositoryModule {
 
     @Singleton
     @Provides
-    fun provideBlockchainRepository(blockchainApi: BlockchainApi): BlockchainRepository {
-        return BlockchainRepository(blockchainApi)
-    }
-
-    @Singleton
-    @Provides
-    fun provideWalletRepository(walletApi: WalletApi): WalletRepository {
-        return WalletRepository(walletApi)
-    }
-
-    @Singleton
-    @Provides
     fun provideTransactionRepository(transactionApi: TransactionApi): TransactionRepository {
         return TransactionRepository(transactionApi)
     }

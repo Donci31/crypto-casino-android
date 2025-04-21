@@ -2,14 +2,39 @@ package hu.bme.aut.crypto_casino_android.ui.screens.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,12 +46,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
-import hu.bme.aut.crypto_casino_android.data.model.blockchain.NetworkInfo
-import hu.bme.aut.crypto_casino_android.data.model.blockchain.TokenRate
 import hu.bme.aut.crypto_casino_android.data.model.user.User
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
 import hu.bme.aut.crypto_casino_android.ui.navigation.BottomNavigationBar
-import hu.bme.aut.crypto_casino_android.ui.theme.*
+import hu.bme.aut.crypto_casino_android.ui.theme.OnSurface
+import hu.bme.aut.crypto_casino_android.ui.theme.Primary
+import hu.bme.aut.crypto_casino_android.ui.theme.PrimaryDark
+import hu.bme.aut.crypto_casino_android.ui.theme.Secondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,8 +62,6 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val userState by viewModel.userState.collectAsState()
-    val networkInfoState by viewModel.networkInfoState.collectAsState()
-    val tokenRateState by viewModel.tokenRateState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -49,9 +73,6 @@ fun HomeScreen(
                     }
                 }
             )
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = rememberNavController())
         }
     ) { paddingValues ->
         Box(
@@ -83,42 +104,6 @@ fun HomeScreen(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Token rate section
-                when (tokenRateState) {
-                    is ApiResult.Success -> {
-                        val tokenRate = (tokenRateState as ApiResult.Success<TokenRate>).data
-                        TokenRateCard(tokenRate)
-                    }
-                    is ApiResult.Error -> {
-                        ErrorCard(
-                            errorMessage = "Failed to load token rates",
-                            onRetry = { viewModel.getTokenRate() }
-                        )
-                    }
-                    ApiResult.Loading, null -> {
-                        LoadingCard(title = "Token Rates")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Network info section
-                when (networkInfoState) {
-                    is ApiResult.Success -> {
-                        val networkInfo = (networkInfoState as ApiResult.Success<NetworkInfo>).data
-                        NetworkInfoCard(networkInfo)
-                    }
-                    is ApiResult.Error -> {
-                        ErrorCard(
-                            errorMessage = "Failed to load network info",
-                            onRetry = { viewModel.getNetworkInfo() }
-                        )
-                    }
-                    ApiResult.Loading, null -> {
-                        LoadingCard(title = "Network Information")
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -168,174 +153,7 @@ fun WelcomeSection(user: User, onNavigateToWallet: () -> Unit) {
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Display wallet info if available
-                user.wallet?.let { walletSummary ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "Balance",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = OnSurface.copy(alpha = 0.7f)
-                            )
-
-                            Text(
-                                text = "${walletSummary.casinoTokenBalance} CST",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = OnSurface
-                            )
-                        }
-
-                        Button(
-                            onClick = onNavigateToWallet,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Secondary
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AccountBalanceWallet,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Manage Wallet")
-                        }
-                    }
-                } ?: run {
-                    // No wallet info
-                    Button(
-                        onClick = onNavigateToWallet,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Secondary
-                        ),
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Setup Wallet")
-                    }
-                }
             }
-        }
-    }
-}
-
-@Composable
-fun TokenRateCard(tokenRate: TokenRate) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Token Exchange Rates",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // ETH to CST rate
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Ethereum.copy(alpha = 0.1f))
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "ETH → CST",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "1 ETH =",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-
-                    Text(
-                        text = "${tokenRate.ethToCstRate} CST",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // CST to ETH rate
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(CasinoToken.copy(alpha = 0.1f))
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "CST → ETH",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "1 CST =",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-
-                    Text(
-                        text = "${tokenRate.cstToEthRate} ETH",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun NetworkInfoCard(networkInfo: NetworkInfo) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Blockchain Network",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            InfoRow("Network", networkInfo.networkId)
-            InfoRow("Client Version", networkInfo.clientVersion)
-            InfoRow("Latest Block", "#${networkInfo.latestBlockNumber}")
-            InfoRow("Gas Price", "${networkInfo.gasPrice} Wei")
-            InfoRow("Casino Token", networkInfo.casinoTokenAddress.take(10) + "..." + networkInfo.casinoTokenAddress.takeLast(8))
         }
     }
 }

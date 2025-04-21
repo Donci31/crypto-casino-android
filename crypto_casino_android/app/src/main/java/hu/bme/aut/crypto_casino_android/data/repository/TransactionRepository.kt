@@ -17,7 +17,4 @@ class TransactionRepository @Inject constructor(
 
     fun getTransactionById(id: Long): Flow<ApiResult<Transaction>> =
         safeApiFlow { transactionApi.getTransactionById(id) }
-
-    fun getTransactionStats(): Flow<ApiResult<Map<String, Long>>> =
-        safeApiFlow { transactionApi.getTransactionStats() }
 }
