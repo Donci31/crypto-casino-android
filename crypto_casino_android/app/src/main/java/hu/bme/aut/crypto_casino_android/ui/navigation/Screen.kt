@@ -6,9 +6,9 @@ sealed class Screen(val route: String) {
     object Register : Screen("register")
     object Home : Screen("home")
     object Wallet : Screen("wallet")
-    object Transactions : Screen("transactions")
-    object TransactionDetail : Screen("transaction/{transactionId}") {
-        fun createRoute(transactionId: Long): String = "transaction/$transactionId"
+    object Transactions : Screen("blockchain-transactions")
+    object TransactionDetail : Screen("blockchain-transaction/{transactionHash}") {
+        fun createRoute(transactionHash: String): String = "blockchain-transaction/$transactionHash"
     }
     object Profile : Screen("profile")
     object Exchange : Screen("exchange")

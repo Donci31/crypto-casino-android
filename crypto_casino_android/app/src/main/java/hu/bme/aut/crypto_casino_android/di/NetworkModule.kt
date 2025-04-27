@@ -1,14 +1,16 @@
 package hu.bme.aut.crypto_casino_android.di
 
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import hu.bme.aut.crypto_casino_android.BuildConfig
 import hu.bme.aut.crypto_casino_android.data.api.AuthApi
-import hu.bme.aut.crypto_casino_android.data.api.TransactionApi
+import hu.bme.aut.crypto_casino_android.data.api.BlockchainTransactionApi
 import hu.bme.aut.crypto_casino_android.data.api.UserApi
 import hu.bme.aut.crypto_casino_android.data.local.TokenManager
+import hu.bme.aut.crypto_casino_android.data.util.LocalDateTimeAdapter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
@@ -16,6 +18,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -65,13 +68,23 @@ object NetworkModule {
 
     @Singleton
     @Provides
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideGsonConverterFactory(): GsonConverterFactory {
+        val gson = GsonBuilder()
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+            .create()
+        return GsonConverterFactory.create(gson)
+    }
+
+    @Singleton
+    @Provides
+    fun provideRetrofit(
+        okHttpClient: OkHttpClient,
+        gsonConverterFactory: GsonConverterFactory
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(
-                GsonConverterFactory.create()
-            )
+            .addConverterFactory(gsonConverterFactory)
             .build()
     }
 
@@ -89,7 +102,7 @@ object NetworkModule {
 
     @Singleton
     @Provides
-    fun provideTransactionApi(retrofit: Retrofit): TransactionApi {
-        return retrofit.create(TransactionApi::class.java)
+    fun provideTransactionApi(retrofit: Retrofit): BlockchainTransactionApi {
+        return retrofit.create(BlockchainTransactionApi::class.java)
     }
 }

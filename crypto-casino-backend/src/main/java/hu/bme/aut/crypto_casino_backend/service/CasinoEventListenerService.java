@@ -46,8 +46,6 @@ public class CasinoEventListenerService {
 
     private final Web3j web3j;
     private final BlockchainTransactionRepository transactionRepository;
-    private final CasinoToken casinoToken;
-    private final CasinoVault casinoVault;
 
     // Map event signatures to event types for faster lookup
     private final Map<String, BlockchainTransaction.TransactionType> eventSignatureToType = new HashMap<>();
@@ -56,13 +54,9 @@ public class CasinoEventListenerService {
     @Autowired
     public CasinoEventListenerService(
             @Qualifier("wsWeb3j") Web3j web3j,
-            BlockchainTransactionRepository transactionRepository,
-            CasinoToken casinoToken,
-            CasinoVault casinoVault) {
+            BlockchainTransactionRepository transactionRepository) {
         this.web3j = web3j;
         this.transactionRepository = transactionRepository;
-        this.casinoToken = casinoToken;
-        this.casinoVault = casinoVault;
     }
 
     @PostConstruct
@@ -130,32 +124,17 @@ public class CasinoEventListenerService {
                 return;
             }
 
-            // Extract indexed parameters (from topics) and non-indexed parameters (from data)
             List<Type> indexedParameters = extractIndexedParameters(event, eventLog);
             List<Type> nonIndexedParameters = extractNonIndexedParameters(event, eventLog);
 
-            // Process the event based on its type
             switch (eventType) {
-                case TOKEN_PURCHASED:
-                    processTokenPurchasedEvent(eventLog, indexedParameters, nonIndexedParameters);
-                    break;
-                case TOKEN_EXCHANGED:
-                    processTokenExchangedEvent(eventLog, indexedParameters, nonIndexedParameters);
-                    break;
-                case DEPOSIT:
-                    processDepositEvent(eventLog, indexedParameters, nonIndexedParameters);
-                    break;
-                case WITHDRAWAL:
-                    processWithdrawalEvent(eventLog, indexedParameters, nonIndexedParameters);
-                    break;
-                case BET:
-                    processBetPlacedEvent(eventLog, indexedParameters, nonIndexedParameters);
-                    break;
-                case WIN:
-                    processWinPaidEvent(eventLog, indexedParameters, nonIndexedParameters);
-                    break;
-                default:
-                    log.warn("Unhandled event type: {}", eventType);
+                case TOKEN_PURCHASED -> processTokenPurchasedEvent(eventLog, indexedParameters, nonIndexedParameters);
+                case TOKEN_EXCHANGED -> processTokenExchangedEvent(eventLog, indexedParameters, nonIndexedParameters);
+                case DEPOSIT -> processDepositEvent(eventLog, indexedParameters, nonIndexedParameters);
+                case WITHDRAWAL -> processWithdrawalEvent(eventLog, indexedParameters, nonIndexedParameters);
+                case BET -> processBetPlacedEvent(eventLog, indexedParameters, nonIndexedParameters);
+                case WIN -> processWinPaidEvent(eventLog, indexedParameters, nonIndexedParameters);
+                default -> log.warn("Unhandled event type: {}", eventType);
             }
         } catch (Exception e) {
             log.error("Error processing event: {}", eventLog, e);
@@ -166,7 +145,6 @@ public class CasinoEventListenerService {
         List<TypeReference<Type>> indexedParameters = event.getIndexedParameters();
         List<String> topics = eventLog.getTopics();
 
-        // The first topic is the event signature, so we start from index 1
         List<Type> result = new ArrayList<>();
         for (int i = 0; i < indexedParameters.size() && i + 1 < topics.size(); i++) {
             String topic = topics.get(i + 1);
@@ -188,7 +166,6 @@ public class CasinoEventListenerService {
 
     private void processTokenPurchasedEvent(Log eventLog, List<Type> indexedParams, List<Type> nonIndexedParams) {
         try {
-            // Process the event data
             String userAddress = ((Address) indexedParams.get(0)).getValue().toLowerCase();
             BigInteger tokenAmount = ((Uint256) nonIndexedParams.get(0)).getValue();
             BigInteger timestamp = ((Uint256) nonIndexedParams.get(1)).getValue();
@@ -198,7 +175,6 @@ public class CasinoEventListenerService {
                     Instant.ofEpochSecond(timestamp.longValue()),
                     ZoneId.systemDefault());
 
-            // Create transaction record
             BlockchainTransaction transaction = BlockchainTransaction.builder()
                     .txHash(eventLog.getTransactionHash())
                     .blockNumber(Numeric.toBigInt(eventLog.getBlockNumber()).longValue())
@@ -209,7 +185,6 @@ public class CasinoEventListenerService {
                     .timestamp(eventTime)
                     .build();
 
-            // Save to database
             transactionRepository.save(transaction);
             log.info("Saved TOKEN_PURCHASED transaction: {} tokens for {}", amount, userAddress);
         } catch (Exception e) {

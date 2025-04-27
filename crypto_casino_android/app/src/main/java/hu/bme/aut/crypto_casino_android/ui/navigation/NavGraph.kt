@@ -25,8 +25,8 @@ import hu.bme.aut.crypto_casino_android.ui.screens.auth.LoginScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.auth.RegisterScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.home.HomeScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.profile.ProfileScreen
-import hu.bme.aut.crypto_casino_android.ui.screens.transactions.TransactionDetailScreen
-import hu.bme.aut.crypto_casino_android.ui.screens.transactions.TransactionsScreen
+import hu.bme.aut.crypto_casino_android.ui.screens.transactions.BlockchainTransactionDetailScreen
+import hu.bme.aut.crypto_casino_android.ui.screens.transactions.BlockchainTransactionsScreen
 
 @Composable
 fun NavGraph(
@@ -75,9 +75,9 @@ fun NavGraph(
         }
 
         composable(Screen.Transactions.route) {
-            TransactionsScreen(
-                onTransactionClick = { transactionId ->
-                    navController.navigate(Screen.TransactionDetail.createRoute(transactionId))
+            BlockchainTransactionsScreen(
+                onTransactionClick = { transactionHash ->
+                    navController.navigate(Screen.TransactionDetail.createRoute(transactionHash))
                 }
             )
         }
@@ -85,14 +85,14 @@ fun NavGraph(
         composable(
             route = Screen.TransactionDetail.route,
             arguments = listOf(
-                navArgument("transactionId") {
-                    type = NavType.LongType
+                navArgument("transactionHash") {
+                    type = NavType.StringType
                 }
             )
         ) { backStackEntry ->
-            val transactionId = backStackEntry.arguments?.getLong("transactionId") ?: -1L
-            TransactionDetailScreen(
-                transactionId = transactionId,
+            val transactionHash = backStackEntry.arguments?.getString("transactionHash") ?: ""
+            BlockchainTransactionDetailScreen(
+                transactionHash = transactionHash,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

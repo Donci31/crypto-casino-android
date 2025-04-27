@@ -18,7 +18,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -34,30 +33,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import hu.bme.aut.crypto_casino_android.data.model.transaction.Transaction
-import hu.bme.aut.crypto_casino_android.data.model.transaction.TransactionStatus
-import hu.bme.aut.crypto_casino_android.data.model.transaction.TransactionType
+import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
-import hu.bme.aut.crypto_casino_android.ui.theme.Error
 import hu.bme.aut.crypto_casino_android.ui.theme.Success
-import hu.bme.aut.crypto_casino_android.ui.theme.Warning
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TransactionDetailScreen(
-    transactionId: Long,
+fun BlockchainTransactionDetailScreen(
+    transactionHash: String,
     onNavigateBack: () -> Unit,
-    viewModel: TransactionsViewModel = hiltViewModel()
+    viewModel: BlockchainTransactionsViewModel = hiltViewModel()
 ) {
     val transactionState by viewModel.transactionState.collectAsState()
 
-    LaunchedEffect(transactionId) {
-        viewModel.getTransactionById(transactionId)
+    LaunchedEffect(transactionHash) {
+        viewModel.getTransactionByHash(transactionHash)
     }
 
     Scaffold(
@@ -79,7 +73,7 @@ fun TransactionDetailScreen(
         ) {
             when (transactionState) {
                 is ApiResult.Success -> {
-                    val transaction = (transactionState as ApiResult.Success<Transaction>).data
+                    val transaction = (transactionState as ApiResult.Success<BlockchainTransaction>).data
                     TransactionDetailContent(transaction)
                 }
                 is ApiResult.Error -> {
@@ -95,7 +89,7 @@ fun TransactionDetailScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.getTransactionById(transactionId) }) {
+                        Button(onClick = { viewModel.getTransactionByHash(transactionHash) }) {
                             Text("Retry")
                         }
                     }
@@ -111,7 +105,7 @@ fun TransactionDetailScreen(
 }
 
 @Composable
-fun TransactionDetailContent(transaction: Transaction) {
+fun TransactionDetailContent(transaction: BlockchainTransaction) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -119,13 +113,6 @@ fun TransactionDetailContent(transaction: Transaction) {
             .verticalScroll(rememberScrollState())
     ) {
         // Transaction Status Card
-        val statusColor = when (transaction.status) {
-            TransactionStatus.COMPLETED -> Success
-            TransactionStatus.PENDING -> Warning
-            TransactionStatus.FAILED -> Error
-            else -> Color.Gray
-        }
-
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -140,7 +127,7 @@ fun TransactionDetailContent(transaction: Transaction) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Transaction ${transaction.id}",
+                        text = "Blockchain Transaction",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -148,12 +135,12 @@ fun TransactionDetailContent(transaction: Transaction) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(statusColor.copy(alpha = 0.1f))
+                            .background(Success.copy(alpha = 0.1f))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = transaction.status?.name ?: "UNKNOWN",
-                            color = statusColor,
+                            text = transaction.eventType.name,
+                            color = Success,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -162,15 +149,8 @@ fun TransactionDetailContent(transaction: Transaction) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                transaction.transactionTime?.let {
-                    Text(
-                        text = "Date: ${it.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss"))}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
                 Text(
-                    text = "Type: ${transaction.type?.name ?: "UNKNOWN"}",
+                    text = "Date: ${transaction.timestamp.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss"))}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -186,40 +166,21 @@ fun TransactionDetailContent(transaction: Transaction) {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Details",
+                    text = "Transaction Details",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                DetailRow("Transaction ID", "${transaction.id}")
+                DetailRow("Transaction Hash", transaction.txHash)
+                DetailRow("Block Number", transaction.blockNumber.toString())
+                DetailRow("Log Index", transaction.logIndex.toString())
+                DetailRow("User Address", transaction.userAddress)
+                DetailRow("Amount", "${transaction.amount} CST")
+                DetailRow("New Balance", "${transaction.newBalance} CST")
 
-                transaction.walletId?.let {
-                    DetailRow("Wallet ID", "$it")
-                }
-
-                transaction.userId?.let {
-                    DetailRow("User ID", "$it")
-                }
-
-                if (transaction.type == TransactionType.EXCHANGE || transaction.type == TransactionType.PURCHASE) {
-                    transaction.ethereumAmount?.let {
-                        DetailRow("ETH Amount", "$it ETH")
-                    }
-                }
-
-                transaction.casinoTokenAmount?.let {
-                    DetailRow("Casino Token Amount", "$it CST")
-                }
-
-                DetailRow("Amount", "${transaction.amount}")
-
-                transaction.transactionHash?.let {
-                    DetailRow("Transaction Hash", it)
-                }
-
-                transaction.blockNumber?.let {
-                    DetailRow("Block Number", "$it")
+                transaction.gameAddress?.let {
+                    DetailRow("Game Address", it)
                 }
             }
         }

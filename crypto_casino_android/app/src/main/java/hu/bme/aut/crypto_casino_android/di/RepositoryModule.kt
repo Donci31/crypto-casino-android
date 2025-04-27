@@ -30,7 +30,7 @@ object RepositoryModule {
 
     @Singleton
     @Provides
-    fun provideTransactionRepository(transactionApi: TransactionApi): TransactionRepository {
-        return TransactionRepository(transactionApi)
+    fun provideTransactionRepository(transactionApi: BlockchainTransactionApi): BlockchainTransactionRepository {
+        return BlockchainTransactionRepository(transactionApi)
     }
 }
