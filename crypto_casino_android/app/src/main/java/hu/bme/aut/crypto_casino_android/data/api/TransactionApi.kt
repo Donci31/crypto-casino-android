@@ -5,7 +5,7 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface TransactionApi {
-    @GET("transactions")
+    @GET("transactions/me")
     suspend fun getTransactions(
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 10

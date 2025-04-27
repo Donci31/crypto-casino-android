@@ -32,8 +32,6 @@ public class UserDto {
 
     private String ethereumAddress;
 
-    private String kycStatus;
-
     private LocalDateTime createdAt;
 
     private LocalDateTime lastLogin;

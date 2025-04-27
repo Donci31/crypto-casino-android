@@ -1,8 +1,6 @@
 package hu.bme.aut.crypto_casino_backend.controller;
 
 import hu.bme.aut.crypto_casino_backend.dto.user.UserDto;
-import hu.bme.aut.crypto_casino_backend.mapper.UserMapper;
-import hu.bme.aut.crypto_casino_backend.model.User;
 import hu.bme.aut.crypto_casino_backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,38 +14,22 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
-    private final UserMapper userMapper;
 
     @GetMapping("/me")
     public ResponseEntity<UserDto> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
-        User user = userService.getUserByUsername
-                (currentUsername);
-        return ResponseEntity.ok(userMapper.toDto(user));
+
+        UserDto userDto = userService.getUserByUsername(currentUsername);
+        return ResponseEntity.ok(userDto);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
-        User user = userService.getUserById(id);
-
-        return ResponseEntity.ok(userMapper.toDto(user));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(
-            @PathVariable Long id,
-            @RequestBody UserDto userDto
-    ) {
+    @PutMapping("/me")
+    public ResponseEntity<UserDto> updateUser(@RequestBody UserDto updateDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
-        User currentUser = userService.getUserByUsername(currentUsername);
 
-        if (!currentUser.getId().equals(id)) {
-            return ResponseEntity.status(403).build();
-        }
-
-        User updatedUser = userService.updateUser(id, userDto);
-        return ResponseEntity.ok(userMapper.toDto(updatedUser));
+        UserDto updatedUser = userService.updateUser(currentUsername, updateDto);
+        return ResponseEntity.ok(updatedUser);
     }
 }
