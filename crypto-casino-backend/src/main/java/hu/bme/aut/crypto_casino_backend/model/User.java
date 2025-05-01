@@ -6,8 +6,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Entity
 @Table(name = "users")
@@ -30,18 +32,21 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
-    @Column(nullable = false)
-    private BigDecimal balance;
-
-    @Column(name = "wallet_address")
-    private String walletAddress;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserWallet> wallets = new ArrayList<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        balance = BigDecimal.valueOf(0);
         createdAt = LocalDateTime.now();
+    }
+
+    public UserWallet getPrimaryWallet() {
+        return wallets.stream()
+                .filter(UserWallet::getIsPrimary)
+                .findFirst()
+                .orElse(null);
     }
 }

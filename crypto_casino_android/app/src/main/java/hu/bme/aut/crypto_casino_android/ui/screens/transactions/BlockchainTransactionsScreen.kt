@@ -13,160 +13,104 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
-import hu.bme.aut.crypto_casino_android.data.model.transaction.TransactionType
-import hu.bme.aut.crypto_casino_android.data.util.ApiResult
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import hu.bme.aut.crypto_casino_android.ui.components.BlockchainTransactionItem
-import java.math.BigDecimal
 
 @Composable
 fun BlockchainTransactionsScreen(
     onTransactionClick: (String) -> Unit,
     viewModel: BlockchainTransactionsViewModel = hiltViewModel()
 ) {
-    val transactionsState by viewModel.transactionsState.collectAsState()
+    // Get paged transactions
+    val transactions = viewModel.transactions.collectAsLazyPagingItems()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        when (transactionsState) {
-            is ApiResult.Success -> {
-                val transactions = (transactionsState as ApiResult.Success<List<BlockchainTransaction>>).data
-                if (transactions.isEmpty()) {
-                    EmptyTransactionsContent(onRefresh = { viewModel.getTransactions() })
-                } else {
-                    TransactionsContent(
-                        transactions = transactions,
-                        onTransactionClick = onTransactionClick
-                    )
-                }
-            }
-            is ApiResult.Error -> {
-                ErrorContent(
-                    message = (transactionsState as ApiResult.Error).exception.message ?: "Unknown error",
-                    onRetry = { viewModel.getTransactions() }
-                )
-            }
-            ApiResult.Loading, null -> {
+        when (transactions.loadState.refresh) {
+            is LoadState.Loading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun TransactionsContent(
-    transactions: List<BlockchainTransaction>,
-    onTransactionClick: (String) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        item {
-            Text(
-                text = "Blockchain Transactions",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
-
-        // Transaction summary
-        item {
-            TransactionSummaryCard(transactions)
-        }
-
-        items(transactions) { transaction ->
-            BlockchainTransactionItem(
-                transaction = transaction,
-                onClick = { onTransactionClick(it.txHash) }
-            )
-        }
-    }
-}
-
-@Composable
-fun TransactionSummaryCard(transactions: List<BlockchainTransaction>) {
-    // Calculate summary information
-    val totalDeposits = transactions
-        .filter { it.eventType == TransactionType.DEPOSIT }
-        .sumOf { it.amount }
-
-    val totalWithdrawals = transactions
-        .filter { it.eventType == TransactionType.WITHDRAWAL }
-        .sumOf { it.amount }
-
-    val totalBets = transactions
-        .filter { it.eventType == TransactionType.BET }
-        .sumOf { it.amount }
-
-    val totalWins = transactions
-        .filter { it.eventType == TransactionType.WIN }
-        .sumOf { it.amount }
-
-    val totalPurchased = transactions
-        .filter { it.eventType == TransactionType.TOKEN_PURCHASED }
-        .sumOf { it.amount }
-
-    val totalExchanged = transactions
-        .filter { it.eventType == TransactionType.TOKEN_EXCHANGED }
-        .sumOf { it.amount }
-
-    val netGaming = totalWins.subtract(totalBets)
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Transaction Summary",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            // Display summary statistics
-            SummaryRow("Total Deposits", totalDeposits)
-            SummaryRow("Total Withdrawals", totalWithdrawals)
-            SummaryRow("Total Bets", totalBets)
-            SummaryRow("Total Wins", totalWins)
-            SummaryRow("Net Gaming", netGaming)
-
-            if (totalPurchased > BigDecimal.ZERO) {
-                SummaryRow("Total Purchased", totalPurchased)
+            is LoadState.Error -> {
+                val error = transactions.loadState.refresh as LoadState.Error
+                ErrorContent(message = error.error.message ?: "Unknown error") {
+                    transactions.refresh()
+                }
             }
+            is LoadState.NotLoading -> {
+                if (transactions.itemCount == 0) {
+                    EmptyTransactionsContent {
+                        transactions.refresh()
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp)
+                    ) {
+                        item {
+                            Text(
+                                text = "Blockchain Transactions",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                        }
 
-            if (totalExchanged > BigDecimal.ZERO) {
-                SummaryRow("Total Exchanged", totalExchanged)
+                        items(
+                            count = transactions.itemCount,
+                            key = { index -> transactions[index]?.txHash ?: index }
+                        ) { index ->
+                            val transaction = transactions[index]
+                            transaction?.let {
+                                BlockchainTransactionItem(
+                                    transaction = it,
+                                    onClick = { onTransactionClick(it.txHash) }
+                                )
+                            }
+                        }
+
+                        // Add loading indicator at the bottom when loading more items
+                        when (transactions.loadState.append) {
+                            is LoadState.Loading -> {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    }
+                                }
+                            }
+                            is LoadState.Error -> {
+                                val error = transactions.loadState.append as LoadState.Error
+                                item {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Error: ${error.error.message ?: "Unknown error"}",
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Button(onClick = { transactions.retry() }) {
+                                            Text("Retry")
+                                        }
+                                    }
+                                }
+                            }
+                            is LoadState.NotLoading -> {} // Do nothing
+                        }
+                    }
+                }
             }
         }
     }
-}
-
-@Composable
-fun SummaryRow(label: String, value: BigDecimal) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            text = "$value CST",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold
-        )
-    }
-    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 }
 
 @Composable

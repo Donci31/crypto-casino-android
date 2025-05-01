@@ -6,9 +6,10 @@ import hu.bme.aut.crypto_casino_backend.model.BlockchainTransaction;
 import hu.bme.aut.crypto_casino_backend.repository.BlockchainTransactionRepository;
 import hu.bme.aut.crypto_casino_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -19,22 +20,25 @@ public class BlockchainTransactionService {
     private final UserRepository userRepository;
     private final BlockchainTransactionMapper transactionMapper;
 
-    public List<BlockchainTransactionDto> getTransactionsForUsername(String username) {
+    public Page<BlockchainTransactionDto> getTransactionsForUsername(String username, Pageable pageable) {
         String userAddress = getUserAddressByUsername(username);
-        List<BlockchainTransaction> transactions = transactionRepository.findByUserAddressOrderByTimestampDesc(userAddress);
-        return transactionMapper.toDtoList(transactions);
+        Page<BlockchainTransaction> transactionsPage = transactionRepository.findByUserAddressOrderByTimestampDesc(userAddress, pageable);
+        return transactionsPage.map(transactionMapper::toDto);
     }
 
     public Optional<BlockchainTransactionDto> getTransactionByHash(String txHash, String username) {
         String userAddress = getUserAddressByUsername(username);
-
-        return transactionRepository.findByTxHashAndUserAddress(txHash, userAddress)
-                .map(transactionMapper::toDto);
+        return transactionRepository.findByTxHash(txHash)
+                .stream()
+                .filter(tx -> tx.getUserAddress().equals(userAddress))
+                .map(transactionMapper::toDto)
+                .findFirst();
     }
 
     private String getUserAddressByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"))
-                .getWalletAddress();
+                .getPrimaryWallet()
+                .getAddress();
     }
 }

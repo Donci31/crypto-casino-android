@@ -40,7 +40,7 @@ class ProfileViewModel @Inject constructor(
     fun updateUser(user: User) {
         viewModelScope.launch {
             user.id?.let { userId ->
-                userRepository.updateUser(userId, user)
+                userRepository.updateUser(user)
                     .collect { result ->
                         _updateState.value = result
                         if (result is ApiResult.Success) {

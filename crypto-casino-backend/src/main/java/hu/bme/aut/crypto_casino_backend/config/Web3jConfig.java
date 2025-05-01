@@ -13,6 +13,7 @@ import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.protocol.websocket.WebSocketService;
+import org.web3j.slotmachine.SlotMachine;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
 
@@ -41,6 +42,9 @@ public class Web3jConfig {
 
     @Value("${web3j.contract.casino-vault}")
     private String casinoVaultAddress;
+
+    @Value("${web3j.contract.slot-machine}")
+    private String slotMachineAddress;
 
     @Value("${wallet.master-wallet.private-key}")
     private String masterWalletPrivateKey;
@@ -88,6 +92,22 @@ public class Web3jConfig {
                 casinoVaultAddress,
                 web3j,
                 credentials,
+                gasProvider
+        );
+    }
+
+    @Bean
+    public SlotMachine slotMachineContract(
+            @Qualifier("httpWeb3j") Web3j web3j,
+            Credentials masterWalletCredentials,
+            ContractGasProvider gasProvider) {
+
+        log.info("Loading SlotMachine contract at address: {}", slotMachineAddress);
+
+        return SlotMachine.load(
+                slotMachineAddress,
+                web3j,
+                masterWalletCredentials,
                 gasProvider
         );
     }

@@ -13,9 +13,6 @@ class UserRepository @Inject constructor(
     fun getCurrentUser(): Flow<ApiResult<User>> =
         safeApiFlow { userApi.getCurrentUser() }
 
-    fun getUserById(id: Long): Flow<ApiResult<User>> =
-        safeApiFlow { userApi.getUserById(id) }
-
-    fun updateUser(id: Long, user: User): Flow<ApiResult<User>> =
-        safeApiFlow { userApi.updateUser(id, user) }
+    fun updateUser(user: User): Flow<ApiResult<User>> =
+        safeApiFlow { userApi.updateUser(user) }
 }

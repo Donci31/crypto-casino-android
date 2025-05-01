@@ -5,8 +5,6 @@ import hu.bme.aut.crypto_casino_backend.dto.user.UserRegistrationDto;
 import hu.bme.aut.crypto_casino_backend.model.User;
 import org.mapstruct.*;
 
-import java.util.List;
-
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
@@ -20,6 +18,5 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "passwordHash", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "balance", ignore = true)
     void updateFromDto(UserDto dto, @MappingTarget User user);
 }

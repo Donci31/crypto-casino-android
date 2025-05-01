@@ -71,6 +71,9 @@ dependencies {
     implementation(libs.coroutines)
     implementation(libs.core)
 
+    implementation(libs.paging.runtime)
+    implementation(libs.paging.compose)
+
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
 
