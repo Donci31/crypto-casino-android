@@ -1,5 +1,6 @@
 package hu.bme.aut.crypto_casino_android.di
 
+import dagger.Binds
 import hu.bme.aut.crypto_casino_android.data.api.*
 import hu.bme.aut.crypto_casino_android.data.repository.*
 import hu.bme.aut.crypto_casino_android.data.local.TokenManager

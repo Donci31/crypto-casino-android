@@ -1,12 +1,23 @@
 package hu.bme.aut.crypto_casino_android.ui.screens.transactions
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -22,7 +33,6 @@ fun BlockchainTransactionsScreen(
     onTransactionClick: (String) -> Unit,
     viewModel: BlockchainTransactionsViewModel = hiltViewModel()
 ) {
-    // Get paged transactions
     val transactions = viewModel.transactions.collectAsLazyPagingItems()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -39,72 +49,28 @@ fun BlockchainTransactionsScreen(
                 }
             }
             is LoadState.NotLoading -> {
-                if (transactions.itemCount == 0) {
-                    EmptyTransactionsContent {
-                        transactions.refresh()
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp)
+                ) {
+                    item {
+                        Text(
+                            text = "Blockchain Transactions",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
                     }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
-                        item {
-                            Text(
-                                text = "Blockchain Transactions",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 16.dp)
+
+                    items(
+                        count = transactions.itemCount
+                    ) { index ->
+                        val transaction = transactions[index]
+                        transaction?.let {
+                            BlockchainTransactionItem(
+                                transaction = it,
+                                onClick = { onTransactionClick(it.txHash) }
                             )
-                        }
-
-                        items(
-                            count = transactions.itemCount,
-                            key = { index -> transactions[index]?.txHash ?: index }
-                        ) { index ->
-                            val transaction = transactions[index]
-                            transaction?.let {
-                                BlockchainTransactionItem(
-                                    transaction = it,
-                                    onClick = { onTransactionClick(it.txHash) }
-                                )
-                            }
-                        }
-
-                        // Add loading indicator at the bottom when loading more items
-                        when (transactions.loadState.append) {
-                            is LoadState.Loading -> {
-                                item {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                    }
-                                }
-                            }
-                            is LoadState.Error -> {
-                                val error = transactions.loadState.append as LoadState.Error
-                                item {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                            text = "Error: ${error.error.message ?: "Unknown error"}",
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Button(onClick = { transactions.retry() }) {
-                                            Text("Retry")
-                                        }
-                                    }
-                                }
-                            }
-                            is LoadState.NotLoading -> {} // Do nothing
                         }
                     }
                 }

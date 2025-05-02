@@ -8,6 +8,7 @@ import dagger.hilt.components.SingletonComponent
 import hu.bme.aut.crypto_casino_android.BuildConfig
 import hu.bme.aut.crypto_casino_android.data.api.AuthApi
 import hu.bme.aut.crypto_casino_android.data.api.BlockchainTransactionApi
+import hu.bme.aut.crypto_casino_android.data.api.SlotMachineApiService
 import hu.bme.aut.crypto_casino_android.data.api.UserApi
 import hu.bme.aut.crypto_casino_android.data.local.TokenManager
 import hu.bme.aut.crypto_casino_android.data.util.LocalDateTimeAdapter
@@ -104,5 +105,11 @@ object NetworkModule {
     @Provides
     fun provideTransactionApi(retrofit: Retrofit): BlockchainTransactionApi {
         return retrofit.create(BlockchainTransactionApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSlotMachineApiService(retrofit: Retrofit): SlotMachineApiService {
+        return retrofit.create(SlotMachineApiService::class.java)
     }
 }

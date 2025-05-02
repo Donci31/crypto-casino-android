@@ -1,7 +1,6 @@
 package hu.bme.aut.crypto_casino_android.ui.navigation
 
 sealed class Screen(val route: String) {
-    object Splash : Screen("splash")
     object Login : Screen("login")
     object Register : Screen("register")
     object Home : Screen("home")
@@ -11,5 +10,6 @@ sealed class Screen(val route: String) {
         fun createRoute(transactionHash: String): String = "blockchain-transaction/$transactionHash"
     }
     object Profile : Screen("profile")
-    object Exchange : Screen("exchange")
+    object SlotMachine : Screen("slot-machine")
+    object GameHistory : Screen("game-history")
 }

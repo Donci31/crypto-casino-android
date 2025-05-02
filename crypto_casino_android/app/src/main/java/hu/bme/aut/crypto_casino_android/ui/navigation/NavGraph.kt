@@ -2,6 +2,7 @@ package hu.bme.aut.crypto_casino_android.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -25,6 +26,7 @@ import hu.bme.aut.crypto_casino_android.ui.screens.auth.LoginScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.auth.RegisterScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.home.HomeScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.profile.ProfileScreen
+import hu.bme.aut.crypto_casino_android.ui.screens.slot.SlotMachineScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.transactions.BlockchainTransactionDetailScreen
 import hu.bme.aut.crypto_casino_android.ui.screens.transactions.BlockchainTransactionsScreen
 
@@ -70,6 +72,9 @@ fun NavGraph(
                 },
                 onNavigateToTransactions = {
                     navController.navigate(Screen.Transactions.route)
+                },
+                onNavigateToSlotMachine = {
+                    navController.navigate(Screen.SlotMachine.route)
                 }
             )
         }
@@ -108,6 +113,15 @@ fun NavGraph(
                 }
             )
         }
+
+        // Add Slot Machine screen
+        composable(Screen.SlotMachine.route) {
+            SlotMachineScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }
 
@@ -115,6 +129,7 @@ fun NavGraph(
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         NavigationItem.Home,
+        NavigationItem.SlotMachine,
         NavigationItem.Transactions,
         NavigationItem.Profile
     )
@@ -147,7 +162,7 @@ fun BottomNavigationBar(navController: NavController) {
 
 sealed class NavigationItem(val route: String, val icon: ImageVector, val title: String) {
     object Home : NavigationItem(Screen.Home.route, Icons.Default.Home, "Home")
-    object Transactions : NavigationItem(Screen.Transactions.route,
-        Icons.AutoMirrored.Filled.List, "Transactions")
+    object SlotMachine : NavigationItem(Screen.SlotMachine.route, Icons.Default.Casino, "Slots")
+    object Transactions : NavigationItem(Screen.Transactions.route, Icons.AutoMirrored.Filled.List, "Transactions")
     object Profile : NavigationItem(Screen.Profile.route, Icons.Default.Person, "Profile")
 }
