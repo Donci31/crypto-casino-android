@@ -98,9 +98,6 @@ fun ProfileScreen(
                     }
                 }
             )
-        },
-        bottomBar = {
-            BottomNavigationBar(navController = rememberNavController())
         }
     ) { paddingValues ->
         Box(
@@ -210,11 +207,6 @@ fun ProfileContent(
                         value = "${it.take(8)}...${it.takeLast(8)}"
                     )
                 },
-                ProfileItem(
-                    icon = Icons.Default.CheckCircle,
-                    label = "KYC Status",
-                    value = user.kycStatus.toString()
-                ),
                 user.createdAt?.let {
                     ProfileItem(
                         icon = Icons.Default.DateRange,
@@ -233,34 +225,6 @@ fun ProfileContent(
         )
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Wallet information
-        user.wallet?.let {
-            ProfileSection(
-                title = "Wallet Information",
-                items = listOfNotNull(
-                    ProfileItem(
-                        icon = Icons.Default.AccountBalance,
-                        label = "Casino Token Balance",
-                        value = "${it.casinoTokenBalance} CST"
-                    ),
-                    it.walletAddress?.let { address ->
-                        ProfileItem(
-                            icon = Icons.Default.AccountBalanceWallet,
-                            label = "Wallet Address",
-                            value = "${address.take(8)}...${address.takeLast(8)}"
-                        )
-                    },
-                    ProfileItem(
-                        icon = Icons.AutoMirrored.Filled.List,
-                        label = "Transaction Count",
-                        value = "${it.transactionCount}"
-                    )
-                )
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-        }
 
         // Logout button
         CasinoButton(

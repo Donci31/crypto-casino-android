@@ -47,7 +47,8 @@ fun MainContent(
                     Screen.Home.route,
                     Screen.Wallet.route,
                     Screen.Transactions.route,
-                    Screen.Profile.route
+                    Screen.Profile.route,
+                    Screen.SlotMachine.route
                 )
             }
 

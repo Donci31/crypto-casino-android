@@ -39,10 +39,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
-                        .requestMatchers("/api/blockchain/network-info", "/api/blockchain/token-rate").permitAll()
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/wallet/**").authenticated()
                         .requestMatchers("/api/transactions/**").authenticated()
+                        .requestMatchers("/api/games/slots/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

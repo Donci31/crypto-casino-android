@@ -1,5 +1,6 @@
 package hu.bme.aut.crypto_casino_android.di
 
+import dagger.Binds
 import hu.bme.aut.crypto_casino_android.data.api.*
 import hu.bme.aut.crypto_casino_android.data.repository.*
 import hu.bme.aut.crypto_casino_android.data.local.TokenManager
@@ -30,19 +31,7 @@ object RepositoryModule {
 
     @Singleton
     @Provides
-    fun provideBlockchainRepository(blockchainApi: BlockchainApi): BlockchainRepository {
-        return BlockchainRepository(blockchainApi)
-    }
-
-    @Singleton
-    @Provides
-    fun provideWalletRepository(walletApi: WalletApi): WalletRepository {
-        return WalletRepository(walletApi)
-    }
-
-    @Singleton
-    @Provides
-    fun provideTransactionRepository(transactionApi: TransactionApi): TransactionRepository {
-        return TransactionRepository(transactionApi)
+    fun provideTransactionRepository(transactionApi: BlockchainTransactionApi): BlockchainTransactionRepository {
+        return BlockchainTransactionRepository(transactionApi)
     }
 }

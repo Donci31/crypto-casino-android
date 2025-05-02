@@ -33,7 +33,8 @@ val Error = Color(0xFFEF4444)        // Red-500
 val Warning = Color(0xFFF59E0B)      // Amber-500
 val Info = Color(0xFF3B82F6)         // Blue-500
 
-// Crypto-specific colors
-val Bitcoin = Color(0xFFF7931A)
-val Ethereum = Color(0xFF627EEA)
-val CasinoToken = Color(0xFFE879F9)  // Purple-400 for our custom token
+// Transaction type colors (new)
+val Purple = Color(0xFF9C27B0)       // For TOKEN_PURCHASED
+val Amber = Color(0xFFFF9800)        // For TOKEN_EXCHANGED
+val Bet = Color(0xFF03A9F4)          // Light Blue for BET
+val Win = Color(0xFFFFEB3B)          // Yellow for WIN
