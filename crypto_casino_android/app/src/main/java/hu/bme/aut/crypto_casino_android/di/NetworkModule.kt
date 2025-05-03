@@ -10,6 +10,7 @@ import hu.bme.aut.crypto_casino_android.data.api.AuthApi
 import hu.bme.aut.crypto_casino_android.data.api.BlockchainTransactionApi
 import hu.bme.aut.crypto_casino_android.data.api.SlotMachineApiService
 import hu.bme.aut.crypto_casino_android.data.api.UserApi
+import hu.bme.aut.crypto_casino_android.data.api.WalletApi
 import hu.bme.aut.crypto_casino_android.data.local.TokenManager
 import hu.bme.aut.crypto_casino_android.data.util.LocalDateTimeAdapter
 import kotlinx.coroutines.flow.first
@@ -111,5 +112,11 @@ object NetworkModule {
     @Singleton
     fun provideSlotMachineApiService(retrofit: Retrofit): SlotMachineApiService {
         return retrofit.create(SlotMachineApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWalletApiService(retrofit: Retrofit): WalletApi {
+        return retrofit.create(WalletApi::class.java)
     }
 }

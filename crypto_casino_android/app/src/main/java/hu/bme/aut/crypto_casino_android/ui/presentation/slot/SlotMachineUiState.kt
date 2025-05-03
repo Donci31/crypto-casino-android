@@ -1,4 +1,4 @@
-package hu.bme.aut.crypto_casino_android.ui.screens.slot
+package hu.bme.aut.crypto_casino_android.ui.presentation.slot
 
 import hu.bme.aut.crypto_casino_android.data.model.slot.GameHistoryResponse
 import hu.bme.aut.crypto_casino_android.data.model.slot.SpinResponse

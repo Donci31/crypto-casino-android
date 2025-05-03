@@ -1,10 +1,8 @@
-package hu.bme.aut.crypto_casino_android.ui.screens.slot
+package hu.bme.aut.crypto_casino_android.ui.presentation.slot
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.bme.aut.crypto_casino_android.data.model.slot.GameHistoryResponse
-import hu.bme.aut.crypto_casino_android.data.model.slot.SpinResponse
 import hu.bme.aut.crypto_casino_android.data.repository.SlotMachineRepository
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow

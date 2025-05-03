@@ -1,13 +1,19 @@
 package hu.bme.aut.crypto_casino_android.di
 
-import dagger.Binds
-import hu.bme.aut.crypto_casino_android.data.api.*
-import hu.bme.aut.crypto_casino_android.data.repository.*
-import hu.bme.aut.crypto_casino_android.data.local.TokenManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import hu.bme.aut.crypto_casino_android.data.api.AuthApi
+import hu.bme.aut.crypto_casino_android.data.api.BlockchainTransactionApi
+import hu.bme.aut.crypto_casino_android.data.api.UserApi
+import hu.bme.aut.crypto_casino_android.data.api.WalletApi
+import hu.bme.aut.crypto_casino_android.data.local.TokenManager
+import hu.bme.aut.crypto_casino_android.data.local.WalletKeyManager
+import hu.bme.aut.crypto_casino_android.data.repository.AuthRepository
+import hu.bme.aut.crypto_casino_android.data.repository.BlockchainTransactionRepository
+import hu.bme.aut.crypto_casino_android.data.repository.UserRepository
+import hu.bme.aut.crypto_casino_android.data.repository.WalletRepository
 import javax.inject.Singleton
 
 @Module
@@ -33,5 +39,14 @@ object RepositoryModule {
     @Provides
     fun provideTransactionRepository(transactionApi: BlockchainTransactionApi): BlockchainTransactionRepository {
         return BlockchainTransactionRepository(transactionApi)
+    }
+
+    @Singleton
+    @Provides
+    fun provideWalletRepository(
+        walletApiService: WalletApi,
+        walletKeyManager: WalletKeyManager
+    ): WalletRepository {
+        return WalletRepository(walletApiService, walletKeyManager)
     }
 }

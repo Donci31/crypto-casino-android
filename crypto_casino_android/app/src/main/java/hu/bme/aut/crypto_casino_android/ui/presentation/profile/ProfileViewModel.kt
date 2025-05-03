@@ -1,4 +1,4 @@
-package hu.bme.aut.crypto_casino_android.ui.screens.profile
+package hu.bme.aut.crypto_casino_android.ui.presentation.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

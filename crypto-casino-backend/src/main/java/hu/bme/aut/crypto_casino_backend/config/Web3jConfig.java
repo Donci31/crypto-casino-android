@@ -18,7 +18,6 @@ import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
 
 import java.math.BigInteger;
-import java.net.ConnectException;
 
 @Configuration
 @Slf4j

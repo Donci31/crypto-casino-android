@@ -1,4 +1,4 @@
-package hu.bme.aut.crypto_casino_android.ui.screens.slot
+package hu.bme.aut.crypto_casino_android.ui.presentation.slot
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode

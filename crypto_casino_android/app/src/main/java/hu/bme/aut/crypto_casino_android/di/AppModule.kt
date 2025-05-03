@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import hu.bme.aut.crypto_casino_android.data.local.WalletKeyManager
 import javax.inject.Singleton
 
 @Module
@@ -17,5 +18,11 @@ object AppModule {
     @Provides
     fun provideTokenManager(@ApplicationContext context: Context): TokenManager {
         return TokenManager(context)
+    }
+
+    @Singleton
+    @Provides
+    fun provideWalletKeyManager(@ApplicationContext context: Context): WalletKeyManager {
+        return WalletKeyManager(context)
     }
 }
