@@ -171,6 +171,6 @@ sealed class NavigationItem(val route: String, val icon: ImageVector, val title:
     object Home : NavigationItem(Screen.Home.route, Icons.Default.Home, "Home")
     object Wallet : NavigationItem(Screen.Wallet.route, Icons.Default.AccountBalanceWallet, "Wallet")
     object SlotMachine : NavigationItem(Screen.SlotMachine.route, Icons.Default.Casino, "Slots")
-    object Transactions : NavigationItem(Screen.Transactions.route, Icons.AutoMirrored.Filled.List, "Transactions")
+    object Transactions : NavigationItem(Screen.Transactions.route, Icons.AutoMirrored.Filled.List, "Transaction")
     object Profile : NavigationItem(Screen.Profile.route, Icons.Default.Person, "Profile")
 }
