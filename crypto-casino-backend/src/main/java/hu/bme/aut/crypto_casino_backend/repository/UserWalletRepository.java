@@ -12,19 +12,21 @@ import java.util.Optional;
 
 @Repository
 public interface UserWalletRepository extends JpaRepository<UserWallet, Long> {
-    Optional<UserWallet> findByAddress(String address);
 
-    List<UserWallet> findByUserId(Long userId);
+	Optional<UserWallet> findByAddress(String address);
 
-    Optional<UserWallet> findByUserIdAndIsPrimaryTrue(Long userId);
+	List<UserWallet> findByUserId(Long userId);
 
-    boolean existsByAddress(String address);
+	Optional<UserWallet> findByUserIdAndIsPrimaryTrue(Long userId);
 
-    @Modifying
-    @Query("UPDATE UserWallet w SET w.isPrimary = false WHERE w.user.id = :userId AND w.id != :walletId")
-    void unsetPrimaryForAllExcept(@Param("userId") Long userId, @Param("walletId") Long walletId);
+	boolean existsByAddress(String address);
 
-    @Modifying
-    @Query("UPDATE UserWallet w SET w.isPrimary = true WHERE w.id = :walletId")
-    void setPrimary(@Param("walletId") Long walletId);
+	@Modifying
+	@Query("UPDATE UserWallet w SET w.isPrimary = false WHERE w.user.id = :userId AND w.id != :walletId")
+	void unsetPrimaryForAllExcept(@Param("userId") Long userId, @Param("walletId") Long walletId);
+
+	@Modifying
+	@Query("UPDATE UserWallet w SET w.isPrimary = true WHERE w.id = :walletId")
+	void setPrimary(@Param("walletId") Long walletId);
+
 }

@@ -7,62 +7,54 @@ import hu.bme.aut.crypto_casino_backend.dto.wallet.WalletResponse;
 import hu.bme.aut.crypto_casino_backend.security.UserPrincipal;
 import hu.bme.aut.crypto_casino_backend.service.WalletService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/wallets")
 @RequiredArgsConstructor
 public class WalletController {
 
-    private final WalletService walletService;
+	private final WalletService walletService;
 
-    @PostMapping
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<WalletResponse> addWallet(
-            @AuthenticationPrincipal UserPrincipal currentUser,
-            @Valid @RequestBody WalletRequest request
-    ) {
+	@PostMapping
+	@PreAuthorize("hasRole('USER')")
+	public ResponseEntity<WalletResponse> addWallet(@AuthenticationPrincipal UserPrincipal currentUser,
+			@Valid @RequestBody WalletRequest request) {
 
-        WalletResponse response = walletService.addWallet(currentUser.getId(), request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+		WalletResponse response = walletService.addWallet(currentUser.getId(), request);
+		return new ResponseEntity<>(response, HttpStatus.CREATED);
+	}
 
-    @GetMapping
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<WalletResponse>> getUserWallets(
-            @AuthenticationPrincipal UserPrincipal currentUser
-    ) {
+	@GetMapping
+	@PreAuthorize("hasRole('USER')")
+	public ResponseEntity<List<WalletResponse>> getUserWallets(@AuthenticationPrincipal UserPrincipal currentUser) {
 
-        List<WalletResponse> wallets = walletService.getUserWallets(currentUser.getId());
-        return ResponseEntity.ok(wallets);
-    }
+		List<WalletResponse> wallets = walletService.getUserWallets(currentUser.getId());
+		return ResponseEntity.ok(wallets);
+	}
 
-    @PutMapping("/primary")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<WalletResponse> setPrimaryWallet(
-            @AuthenticationPrincipal UserPrincipal currentUser,
-            @Valid @RequestBody SetPrimaryRequest request
-    ) {
+	@PutMapping("/primary")
+	@PreAuthorize("hasRole('USER')")
+	public ResponseEntity<WalletResponse> setPrimaryWallet(@AuthenticationPrincipal UserPrincipal currentUser,
+			@Valid @RequestBody SetPrimaryRequest request) {
 
-        WalletResponse response = walletService.setPrimaryWallet(currentUser.getId(), request);
-        return ResponseEntity.ok(response);
-    }
+		WalletResponse response = walletService.setPrimaryWallet(currentUser.getId(), request);
+		return ResponseEntity.ok(response);
+	}
 
-    @GetMapping("/{walletId}/balance")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<BalanceResponse> getWalletBalance(
-            @AuthenticationPrincipal UserPrincipal currentUser,
-            @PathVariable Long walletId
-    ) {
+	@GetMapping("/{walletId}/balance")
+	@PreAuthorize("hasRole('USER')")
+	public ResponseEntity<BalanceResponse> getWalletBalance(@AuthenticationPrincipal UserPrincipal currentUser,
+			@PathVariable Long walletId) {
 
-        BalanceResponse balance = walletService.getWalletBalance(currentUser.getId(), walletId);
-        return ResponseEntity.ok(balance);
-    }
+		BalanceResponse balance = walletService.getWalletBalance(currentUser.getId(), walletId);
+		return ResponseEntity.ok(balance);
+	}
+
 }

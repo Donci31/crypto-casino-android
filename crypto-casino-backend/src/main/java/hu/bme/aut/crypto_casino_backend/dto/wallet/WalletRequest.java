@@ -12,12 +12,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WalletRequest {
-    @NotBlank(message = "Wallet address is required")
-    @Pattern(regexp = "^0x[a-fA-F0-9]{40}$", message = "Invalid Ethereum wallet address format")
-    private String address;
 
-    @NotBlank(message = "Wallet label is required")
-    private String label;
+	@NotBlank(message = "Wallet address is required")
+	@Pattern(regexp = "^0x[a-fA-F0-9]{40}$", message = "Invalid Ethereum wallet address format")
+	private String address;
 
-    private Boolean isPrimary;
+	@NotBlank(message = "Wallet label is required")
+	private String label;
+
+	private Boolean isPrimary;
+
 }

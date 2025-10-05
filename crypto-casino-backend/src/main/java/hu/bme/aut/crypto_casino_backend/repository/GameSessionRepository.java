@@ -12,11 +12,13 @@ import java.util.Optional;
 
 @Repository
 public interface GameSessionRepository extends JpaRepository<GameSession, Long> {
-    Page<GameSession> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
-    List<GameSession> findTop10ByUserOrderByCreatedAtDesc(User user);
+	Page<GameSession> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
-    Optional<GameSession> findByBlockchainSpinId(Long blockchainSpinId);
+	List<GameSession> findTop10ByUserOrderByCreatedAtDesc(User user);
 
-    Page<GameSession> findByGameTypeOrderByCreatedAtDesc(String gameType, Pageable pageable);
+	Optional<GameSession> findByBlockchainSpinId(Long blockchainSpinId);
+
+	Page<GameSession> findByGameTypeOrderByCreatedAtDesc(String gameType, Pageable pageable);
+
 }

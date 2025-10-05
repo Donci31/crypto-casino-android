@@ -27,87 +27,91 @@ import java.util.List;
 @Slf4j
 public class WalletService {
 
-    private final UserRepository userRepository;
-    private final UserWalletRepository walletRepository;
-    private final CasinoVault casinoVault;
-    private final WalletMapper walletMapper;
+	private final UserRepository userRepository;
 
-    @Transactional
-    public WalletResponse addWallet(Long userId, WalletRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+	private final UserWalletRepository walletRepository;
 
-        if (walletRepository.existsByAddress(request.getAddress())) {
-            throw new ResourceAlreadyExistsException("Wallet address already registered: " + request.getAddress());
-        }
+	private final CasinoVault casinoVault;
 
-        boolean isPrimary = request.getIsPrimary() != null && request.getIsPrimary();
+	private final WalletMapper walletMapper;
 
-        if (isPrimary) {
-            walletRepository.findByUserIdAndIsPrimaryTrue(userId)
-                    .ifPresent(wallet -> wallet.setIsPrimary(false));
-        }
+	@Transactional
+	public WalletResponse addWallet(Long userId, WalletRequest request) {
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        if (walletRepository.findByUserId(userId).isEmpty()) {
-            isPrimary = true;
-        }
+		if (walletRepository.existsByAddress(request.getAddress())) {
+			throw new ResourceAlreadyExistsException("Wallet address already registered: " + request.getAddress());
+		}
 
-        UserWallet wallet = walletMapper.walletRequestToUserWallet(request, user);
-        wallet.setIsPrimary(isPrimary);
+		boolean isPrimary = request.getIsPrimary() != null && request.getIsPrimary();
 
-        UserWallet savedWallet = walletRepository.save(wallet);
+		if (isPrimary) {
+			walletRepository.findByUserIdAndIsPrimaryTrue(userId).ifPresent(wallet -> wallet.setIsPrimary(false));
+		}
 
-        return walletMapper.userWalletToWalletResponse(savedWallet);
-    }
+		if (walletRepository.findByUserId(userId).isEmpty()) {
+			isPrimary = true;
+		}
 
-    @Transactional
-    public WalletResponse setPrimaryWallet(Long userId, SetPrimaryRequest request) {
-        UserWallet wallet = walletRepository.findById(request.getWalletId())
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + request.getWalletId()));
+		UserWallet wallet = walletMapper.walletRequestToUserWallet(request, user);
+		wallet.setIsPrimary(isPrimary);
 
-        if (!wallet.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Wallet does not belong to the user");
-        }
+		UserWallet savedWallet = walletRepository.save(wallet);
 
-        walletRepository.unsetPrimaryForAllExcept(userId, wallet.getId());
+		return walletMapper.userWalletToWalletResponse(savedWallet);
+	}
 
-        wallet.setIsPrimary(true);
-        UserWallet updatedWallet = walletRepository.save(wallet);
+	@Transactional
+	public WalletResponse setPrimaryWallet(Long userId, SetPrimaryRequest request) {
+		UserWallet wallet = walletRepository.findById(request.getWalletId())
+			.orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + request.getWalletId()));
 
-        return walletMapper.userWalletToWalletResponse(updatedWallet);
-    }
+		if (!wallet.getUser().getId().equals(userId)) {
+			throw new IllegalArgumentException("Wallet does not belong to the user");
+		}
 
-    @Transactional(readOnly = true)
-    public List<WalletResponse> getUserWallets(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("User not found with id: " + userId);
-        }
+		walletRepository.unsetPrimaryForAllExcept(userId, wallet.getId());
 
-        List<UserWallet> wallets = walletRepository.findByUserId(userId);
-        return walletMapper.userWalletsToWalletResponses(wallets);
-    }
+		wallet.setIsPrimary(true);
+		UserWallet updatedWallet = walletRepository.save(wallet);
 
-    @Transactional(readOnly = true)
-    public BalanceResponse getWalletBalance(Long userId, Long walletId) {
-        UserWallet wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
+		return walletMapper.userWalletToWalletResponse(updatedWallet);
+	}
 
-        if (!wallet.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Wallet does not belong to the user");
-        }
+	@Transactional(readOnly = true)
+	public List<WalletResponse> getUserWallets(Long userId) {
+		if (!userRepository.existsById(userId)) {
+			throw new ResourceNotFoundException("User not found with id: " + userId);
+		}
 
-        BigDecimal balance = getVaultBalance(wallet.getAddress());
+		List<UserWallet> wallets = walletRepository.findByUserId(userId);
+		return walletMapper.userWalletsToWalletResponses(wallets);
+	}
 
-        return walletMapper.toBalanceResponse(wallet, balance);
-    }
+	@Transactional(readOnly = true)
+	public BalanceResponse getWalletBalance(Long userId, Long walletId) {
+		UserWallet wallet = walletRepository.findById(walletId)
+			.orElseThrow(() -> new ResourceNotFoundException("Wallet not found with id: " + walletId));
 
-    public BigDecimal getVaultBalance(String walletAddress) {
-        try {
-            BigInteger balance = casinoVault.getBalance(walletAddress).send();
-            return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
-        } catch (Exception e) {
-            log.error("Error getting vault balance for address: {}", walletAddress, e);
-            throw new RuntimeException("Failed to get vault balance from blockchain", e);
-        }
-    }
+		if (!wallet.getUser().getId().equals(userId)) {
+			throw new IllegalArgumentException("Wallet does not belong to the user");
+		}
+
+		BigDecimal balance = getVaultBalance(wallet.getAddress());
+
+		return walletMapper.toBalanceResponse(wallet, balance);
+	}
+
+	public BigDecimal getVaultBalance(String walletAddress) {
+		try {
+			BigInteger balance = casinoVault.getBalance(walletAddress).send();
+			return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
+		}
+		catch (Exception e) {
+			log.error("Error getting vault balance for address: {}", walletAddress, e);
+			throw new RuntimeException("Failed to get vault balance from blockchain", e);
+		}
+	}
+
 }

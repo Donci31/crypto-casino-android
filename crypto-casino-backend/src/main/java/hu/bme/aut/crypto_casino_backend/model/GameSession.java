@@ -17,41 +17,42 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class GameSession {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+	@ManyToOne
+	@JoinColumn(name = "user_id", nullable = false)
+	private User user;
 
-    @Column(nullable = false)
-    private String gameType;
+	@Column(nullable = false)
+	private String gameType;
 
-    @Column(name = "blockchain_spin_id")
-    private Long blockchainSpinId;
+	@Column(name = "blockchain_spin_id")
+	private Long blockchainSpinId;
 
-    @Column(nullable = false)
-    private BigDecimal betAmount;
+	@Column(nullable = false)
+	private BigDecimal betAmount;
 
-    @Column(nullable = false)
-    private BigDecimal winAmount;
+	@Column(nullable = false)
+	private BigDecimal winAmount;
 
-    @Column
-    private String gameResult;
+	@Column
+	private String gameResult;
 
-    @Column(nullable = false)
-    private Boolean isResolved;
+	@Column(nullable = false)
+	private Boolean isResolved;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
+	@Column(nullable = false)
+	private LocalDateTime createdAt;
 
-    @Column
-    private LocalDateTime resolvedAt;
+	@Column
+	private LocalDateTime resolvedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        isResolved = false;
-    }
+	@PrePersist
+	protected void onCreate() {
+		createdAt = LocalDateTime.now();
+		isResolved = false;
+	}
+
 }

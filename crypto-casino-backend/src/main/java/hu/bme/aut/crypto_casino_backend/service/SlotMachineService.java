@@ -35,215 +35,225 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class SlotMachineService {
-    private static final String GAME_TYPE = "SLOT_MACHINE";
 
-    private final UserRepository userRepository;
-    private final UserWalletRepository walletRepository;
-    private final GameSessionRepository gameSessionRepository;
-    private final BlockchainTransactionRepository blockchainTransactionRepository;
-    private final GameMapper gameMapper;
-    private final ObjectMapper objectMapper;
+	private static final String GAME_TYPE = "SLOT_MACHINE";
 
-    private final SlotMachine slotMachine;
-    private final CasinoVault casinoVault;
+	private final UserRepository userRepository;
 
-    private final Web3jConfig web3jConfig;
+	private final UserWalletRepository walletRepository;
 
-    @Transactional
-    public CompletableFuture<SpinResponse> executeSpin(Long userId, BigDecimal betAmount) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+	private final GameSessionRepository gameSessionRepository;
 
-        UserWallet primaryWallet = walletRepository.findByUserIdAndIsPrimaryTrue(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User does not have a primary wallet"));
+	private final BlockchainTransactionRepository blockchainTransactionRepository;
 
-        String walletAddress = primaryWallet.getAddress();
+	private final GameMapper gameMapper;
 
-        SlotConfigResponse config = getSlotMachineConfig();
+	private final ObjectMapper objectMapper;
 
-        if (betAmount.compareTo(config.getMinBet()) < 0) {
-            throw new IllegalArgumentException("Bet amount is below minimum: " + config.getMinBet());
-        }
+	private final SlotMachine slotMachine;
 
-        if (betAmount.compareTo(config.getMaxBet()) > 0) {
-            throw new IllegalArgumentException("Bet amount is above maximum: " + config.getMaxBet());
-        }
+	private final CasinoVault casinoVault;
 
-        if (!config.isActive()) {
-            throw new IllegalStateException("Slot machine is currently not active");
-        }
+	private final Web3jConfig web3jConfig;
 
-        GameSession gameSession = GameSession.builder()
-                .user(user)
-                .gameType(GAME_TYPE)
-                .betAmount(betAmount)
-                .winAmount(BigDecimal.ZERO)
-                .isResolved(false)
-                .build();
+	@Transactional
+	public CompletableFuture<SpinResponse> executeSpin(Long userId, BigDecimal betAmount) {
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        GameSession savedSession = gameSessionRepository.save(gameSession);
+		UserWallet primaryWallet = walletRepository.findByUserIdAndIsPrimaryTrue(userId)
+			.orElseThrow(() -> new ResourceNotFoundException("User does not have a primary wallet"));
 
-        return executeSpinOnBlockchain(walletAddress, betAmount)
-                .thenApply(result -> {
-                    try {
-                        savedSession.setBlockchainSpinId(result.getSpinId());
-                        savedSession.setWinAmount(result.getWinAmount());
-                        savedSession.setGameResult(objectMapper.writeValueAsString(result));
-                        savedSession.setIsResolved(true);
-                        savedSession.setResolvedAt(LocalDateTime.now());
+		String walletAddress = primaryWallet.getAddress();
 
-                        gameSessionRepository.save(savedSession);
+		SlotConfigResponse config = getSlotMachineConfig();
 
-                        BigDecimal newBalance = getVaultBalance(walletAddress);
+		if (betAmount.compareTo(config.getMinBet()) < 0) {
+			throw new IllegalArgumentException("Bet amount is below minimum: " + config.getMinBet());
+		}
 
-                        return SpinResponse.builder()
-                                .spinId(result.getSpinId())
-                                .reels(result.getReels())
-                                .betAmount(betAmount)
-                                .winAmount(result.getWinAmount())
-                                .isWin(result.isWin())
-                                .timestamp(LocalDateTime.now())
-                                .newBalance(newBalance)
-                                .build();
-                    } catch (Exception e) {
-                        log.error("Error processing spin result", e);
-                        throw new RuntimeException("Error processing spin result", e);
-                    }
-                });
-    }
+		if (betAmount.compareTo(config.getMaxBet()) > 0) {
+			throw new IllegalArgumentException("Bet amount is above maximum: " + config.getMaxBet());
+		}
 
-    private CompletableFuture<SlotMachineResult> executeSpinOnBlockchain(String userAddress, BigDecimal betAmount) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
+		if (!config.isActive()) {
+			throw new IllegalStateException("Slot machine is currently not active");
+		}
 
-                TransactionReceipt receipt = slotMachine.spinForPlayer(userAddress, betAmountWei).send();
+		GameSession gameSession = GameSession.builder()
+			.user(user)
+			.gameType(GAME_TYPE)
+			.betAmount(betAmount)
+			.winAmount(BigDecimal.ZERO)
+			.isResolved(false)
+			.build();
 
-                List<SlotMachine.SpinResultEventResponse> results = SlotMachine.getSpinResultEvents(receipt);
-                if (results.isEmpty()) {
-                    throw new RuntimeException("No spin result event found in transaction");
-                }
+		GameSession savedSession = gameSessionRepository.save(gameSession);
 
-                var event = results.getFirst();
+		return executeSpinOnBlockchain(walletAddress, betAmount).thenApply(result -> {
+			try {
+				savedSession.setBlockchainSpinId(result.getSpinId());
+				savedSession.setWinAmount(result.getWinAmount());
+				savedSession.setGameResult(objectMapper.writeValueAsString(result));
+				savedSession.setIsResolved(true);
+				savedSession.setResolvedAt(LocalDateTime.now());
 
-                int[] reels = new int[3];
-                reels[0] = event.reels.get(0).intValue();
-                reels[1] = event.reels.get(1).intValue();
-                reels[2] = event.reels.get(2).intValue();
+				gameSessionRepository.save(savedSession);
 
-                BigDecimal winAmount = new BigDecimal(event.winAmount)
-                        .divide(BigDecimal.TEN.pow(18));
+				BigDecimal newBalance = getVaultBalance(walletAddress);
 
-                BlockchainTransaction betTx = BlockchainTransaction.builder()
-                        .txHash(receipt.getTransactionHash())
-                        .blockNumber(receipt.getBlockNumber().longValue())
-                        .userAddress(userAddress)
-                        .eventType(BlockchainTransaction.TransactionType.BET)
-                        .amount(betAmount)
-                        .gameAddress(web3jConfig.getSlotMachineAddress())
-                        .timestamp(LocalDateTime.now())
-                        .build();
+				return SpinResponse.builder()
+					.spinId(result.getSpinId())
+					.reels(result.getReels())
+					.betAmount(betAmount)
+					.winAmount(result.getWinAmount())
+					.isWin(result.isWin())
+					.timestamp(LocalDateTime.now())
+					.newBalance(newBalance)
+					.build();
+			}
+			catch (Exception e) {
+				log.error("Error processing spin result", e);
+				throw new RuntimeException("Error processing spin result", e);
+			}
+		});
+	}
 
-                blockchainTransactionRepository.save(betTx);
+	private CompletableFuture<SlotMachineResult> executeSpinOnBlockchain(String userAddress, BigDecimal betAmount) {
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
 
-                if (winAmount.compareTo(BigDecimal.ZERO) > 0) {
-                    BlockchainTransaction winTx = BlockchainTransaction.builder()
-                            .txHash(receipt.getTransactionHash())
-                            .blockNumber(receipt.getBlockNumber().longValue())
-                            .logIndex(event.log.getLogIndex().intValue())
-                            .userAddress(userAddress)
-                            .eventType(BlockchainTransaction.TransactionType.WIN)
-                            .amount(winAmount)
-                            .gameAddress(web3jConfig.getSlotMachineAddress())
-                            .timestamp(LocalDateTime.now())
-                            .build();
+				TransactionReceipt receipt = slotMachine.spinForPlayer(userAddress, betAmountWei).send();
 
-                    blockchainTransactionRepository.save(winTx);
-                }
+				List<SlotMachine.SpinResultEventResponse> results = SlotMachine.getSpinResultEvents(receipt);
+				if (results.isEmpty()) {
+					throw new RuntimeException("No spin result event found in transaction");
+				}
 
-                return SlotMachineResult.builder()
-                        .spinId(event.spinId.longValue())
-                        .reels(reels)
-                        .betAmount(betAmount)
-                        .winAmount(winAmount)
-                        .isWin(winAmount.compareTo(BigDecimal.ZERO) > 0)
-                        .build();
+				var event = results.getFirst();
 
-            } catch (Exception e) {
-                log.error("Error executing spin on blockchain", e);
-                throw new RuntimeException("Failed to execute spin on blockchain", e);
-            }
-        });
-    }
+				int[] reels = new int[3];
+				reels[0] = event.reels.get(0).intValue();
+				reels[1] = event.reels.get(1).intValue();
+				reels[2] = event.reels.get(2).intValue();
 
-    public BigDecimal getVaultBalance(String walletAddress) {
-        try {
-            BigInteger balance = casinoVault.getBalance(walletAddress).send();
-            return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18));
-        } catch (Exception e) {
-            log.error("Error getting balance from blockchain", e);
-            throw new RuntimeException("Failed to get balance from blockchain", e);
-        }
-    }
+				BigDecimal winAmount = new BigDecimal(event.winAmount).divide(BigDecimal.TEN.pow(18));
 
-    public SlotConfigResponse getSlotMachineConfig() {
-        try {
-            BigInteger minBet = slotMachine.minBet().send();
-            BigInteger maxBet = slotMachine.maxBet().send();
-            BigInteger houseEdge = slotMachine.houseEdge().send();
-            boolean isPaused = slotMachine.paused().send();
+				BlockchainTransaction betTx = BlockchainTransaction.builder()
+					.txHash(receipt.getTransactionHash())
+					.blockNumber(receipt.getBlockNumber().longValue())
+					.userAddress(userAddress)
+					.eventType(BlockchainTransaction.TransactionType.BET)
+					.amount(betAmount)
+					.gameAddress(web3jConfig.getSlotMachineAddress())
+					.timestamp(LocalDateTime.now())
+					.build();
 
-            return SlotConfigResponse.builder()
-                    .minBet(new BigDecimal(minBet).divide(BigDecimal.TEN.pow(18)))
-                    .maxBet(new BigDecimal(maxBet).divide(BigDecimal.TEN.pow(18)))
-                    .houseEdge(houseEdge.intValue())
-                    .isActive(!isPaused)
-                    .build();
+				blockchainTransactionRepository.save(betTx);
 
-        } catch (Exception e) {
-            log.error("Error getting slot machine config", e);
-            throw new RuntimeException("Failed to get slot machine configuration", e);
-        }
-    }
+				if (winAmount.compareTo(BigDecimal.ZERO) > 0) {
+					BlockchainTransaction winTx = BlockchainTransaction.builder()
+						.txHash(receipt.getTransactionHash())
+						.blockNumber(receipt.getBlockNumber().longValue())
+						.logIndex(event.log.getLogIndex().intValue())
+						.userAddress(userAddress)
+						.eventType(BlockchainTransaction.TransactionType.WIN)
+						.amount(winAmount)
+						.gameAddress(web3jConfig.getSlotMachineAddress())
+						.timestamp(LocalDateTime.now())
+						.build();
 
-    @Transactional(readOnly = true)
-    public List<GameHistoryResponse> getGameHistory(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+					blockchainTransactionRepository.save(winTx);
+				}
 
-        List<GameSession> sessions = gameSessionRepository.findTop10ByUserOrderByCreatedAtDesc(user);
+				return SlotMachineResult.builder()
+					.spinId(event.spinId.longValue())
+					.reels(reels)
+					.betAmount(betAmount)
+					.winAmount(winAmount)
+					.isWin(winAmount.compareTo(BigDecimal.ZERO) > 0)
+					.build();
 
-        return sessions.stream()
-                .filter(GameSession::getIsResolved)
-                .map(session -> {
-                    try {
-                        GameHistoryResponse response = gameMapper.gameSessionToHistoryResponse(session);
+			}
+			catch (Exception e) {
+				log.error("Error executing spin on blockchain", e);
+				throw new RuntimeException("Failed to execute spin on blockchain", e);
+			}
+		});
+	}
 
-                        SlotMachineResult result = objectMapper.readValue(
-                                session.getGameResult(),
-                                SlotMachineResult.class
-                        );
+	public BigDecimal getVaultBalance(String walletAddress) {
+		try {
+			BigInteger balance = casinoVault.getBalance(walletAddress).send();
+			return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18));
+		}
+		catch (Exception e) {
+			log.error("Error getting balance from blockchain", e);
+			throw new RuntimeException("Failed to get balance from blockchain", e);
+		}
+	}
 
-                        response.setReels(result.getReels());
-                        return response;
-                    } catch (Exception e) {
-                        log.error("Error parsing game result", e);
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
+	public SlotConfigResponse getSlotMachineConfig() {
+		try {
+			BigInteger minBet = slotMachine.minBet().send();
+			BigInteger maxBet = slotMachine.maxBet().send();
+			BigInteger houseEdge = slotMachine.houseEdge().send();
+			boolean isPaused = slotMachine.paused().send();
 
-    @lombok.Data
-    @lombok.Builder
-    @lombok.AllArgsConstructor
-    @lombok.NoArgsConstructor
-    public static class SlotMachineResult {
-        private Long spinId;
-        private int[] reels;
-        private BigDecimal betAmount;
-        private BigDecimal winAmount;
-        private boolean isWin;
-    }
+			return SlotConfigResponse.builder()
+				.minBet(new BigDecimal(minBet).divide(BigDecimal.TEN.pow(18)))
+				.maxBet(new BigDecimal(maxBet).divide(BigDecimal.TEN.pow(18)))
+				.houseEdge(houseEdge.intValue())
+				.isActive(!isPaused)
+				.build();
+
+		}
+		catch (Exception e) {
+			log.error("Error getting slot machine config", e);
+			throw new RuntimeException("Failed to get slot machine configuration", e);
+		}
+	}
+
+	@Transactional(readOnly = true)
+	public List<GameHistoryResponse> getGameHistory(Long userId) {
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+		List<GameSession> sessions = gameSessionRepository.findTop10ByUserOrderByCreatedAtDesc(user);
+
+		return sessions.stream().filter(GameSession::getIsResolved).map(session -> {
+			try {
+				GameHistoryResponse response = gameMapper.gameSessionToHistoryResponse(session);
+
+				SlotMachineResult result = objectMapper.readValue(session.getGameResult(), SlotMachineResult.class);
+
+				response.setReels(result.getReels());
+				return response;
+			}
+			catch (Exception e) {
+				log.error("Error parsing game result", e);
+				return null;
+			}
+		}).filter(Objects::nonNull).collect(Collectors.toList());
+	}
+
+	@lombok.Data
+	@lombok.Builder
+	@lombok.AllArgsConstructor
+	@lombok.NoArgsConstructor
+	public static class SlotMachineResult {
+
+		private Long spinId;
+
+		private int[] reels;
+
+		private BigDecimal betAmount;
+
+		private BigDecimal winAmount;
+
+		private boolean isWin;
+
+	}
+
 }

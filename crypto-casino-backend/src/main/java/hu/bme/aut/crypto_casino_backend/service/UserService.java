@@ -17,27 +17,30 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final UserMapper userMapper;
+	private final UserRepository userRepository;
 
-    public UserDto getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
-        return userMapper.toDto(user);
-    }
+	private final PasswordEncoder passwordEncoder;
 
-    public UserDto updateUser(String username, UserDto userDto) {
-        User existingUser = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + username));
+	private final UserMapper userMapper;
 
-        userMapper.updateFromDto(userDto, existingUser);
+	public UserDto getUserByUsername(String username) {
+		User user = userRepository.findByUsername(username)
+			.orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+		return userMapper.toDto(user);
+	}
 
-        if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
-            existingUser.setPasswordHash(passwordEncoder.encode(userDto.getPassword()));
-        }
+	public UserDto updateUser(String username, UserDto userDto) {
+		User existingUser = userRepository.findByUsername(username)
+			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + username));
 
-        User updated = userRepository.save(existingUser);
-        return userMapper.toDto(updated);
-    }
+		userMapper.updateFromDto(userDto, existingUser);
+
+		if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
+			existingUser.setPasswordHash(passwordEncoder.encode(userDto.getPassword()));
+		}
+
+		User updated = userRepository.save(existingUser);
+		return userMapper.toDto(updated);
+	}
+
 }

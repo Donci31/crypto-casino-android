@@ -21,54 +21,49 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
+	private final UserRepository userRepository;
 
-    @Transactional
-    public UserDto registerUser(UserRegistrationDto registrationDto) {
-        if (userRepository.existsByUsername(registrationDto.getUsername())) {
-            throw new ResourceAlreadyExistsException("Username already exists");
-        }
+	private final UserMapper userMapper;
 
-        if (userRepository.existsByEmail(registrationDto.getEmail())) {
-            throw new ResourceAlreadyExistsException("Email already exists");
-        }
+	private final PasswordEncoder passwordEncoder;
 
-        User user = userMapper.fromRegistrationDto(registrationDto);
-        user.setPasswordHash(passwordEncoder.encode(registrationDto.getPassword()));
+	private final JwtService jwtService;
 
-        User savedUser = userRepository.save(user);
+	private final AuthenticationManager authenticationManager;
 
-        return userMapper.toDto(savedUser);
-    }
+	@Transactional
+	public UserDto registerUser(UserRegistrationDto registrationDto) {
+		if (userRepository.existsByUsername(registrationDto.getUsername())) {
+			throw new ResourceAlreadyExistsException("Username already exists");
+		}
 
-    public AuthResponseDto login(UserLoginDto loginDto) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginDto.getUsernameOrEmail(),
-                        loginDto.getPassword()
-                )
-        );
+		if (userRepository.existsByEmail(registrationDto.getEmail())) {
+			throw new ResourceAlreadyExistsException("Email already exists");
+		}
 
-        User user = userRepository.findByUsernameOrEmail(loginDto.getUsernameOrEmail(), loginDto.getUsernameOrEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        userRepository.save(user);
+		User user = userMapper.fromRegistrationDto(registrationDto);
+		user.setPasswordHash(passwordEncoder.encode(registrationDto.getPassword()));
 
-        String jwtToken = jwtService.generateToken(
-                org.springframework.security.core.userdetails.User.builder()
-                        .username(user.getUsername())
-                        .password(user.getPasswordHash())
-                        .authorities("ROLE_USER")
-                        .build()
-        );
+		User savedUser = userRepository.save(user);
 
-        return AuthResponseDto.builder()
-                .token(jwtToken)
-                .tokenType("Bearer")
-                .user(userMapper.toDto(user))
-                .build();
-    }
+		return userMapper.toDto(savedUser);
+	}
+
+	public AuthResponseDto login(UserLoginDto loginDto) {
+		authenticationManager.authenticate(
+				new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
+
+		User user = userRepository.findByUsernameOrEmail(loginDto.getUsernameOrEmail(), loginDto.getUsernameOrEmail())
+			.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+		userRepository.save(user);
+
+		String jwtToken = jwtService.generateToken(org.springframework.security.core.userdetails.User.builder()
+			.username(user.getUsername())
+			.password(user.getPasswordHash())
+			.authorities("ROLE_USER")
+			.build());
+
+		return AuthResponseDto.builder().token(jwtToken).tokenType("Bearer").user(userMapper.toDto(user)).build();
+	}
+
 }
