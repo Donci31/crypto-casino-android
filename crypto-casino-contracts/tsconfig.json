@@ -1,11 +1,53 @@
 {
   "compilerOptions": {
-    "target": "es2020",
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "sourceMap": true,
     "strict": true,
+    "noImplicitAny": true,
+    "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
-  }
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@contracts/*": [
+        "./contracts/*"
+      ],
+      "@scripts/*": [
+        "./scripts/*"
+      ],
+      "@test/*": [
+        "./test/*"
+      ],
+      "@typechain/*": [
+        "./typechain-types/*"
+      ]
+    },
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "node",
+      "hardhat"
+    ],
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "hardhat.config.ts",
+    "scripts",
+    "test",
+    "ignition",
+    "typechain-types"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "cache",
+    "artifacts"
+  ]
 }
