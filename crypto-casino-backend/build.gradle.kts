@@ -35,6 +35,7 @@ dependencies {
     val web3jCoreVersion = "4.12.3"
     val mapStructVersion = "1.6.3"
     val jwtVersion = "0.12.6"
+    val springDotEnv = "4.0.0"
 
     developmentOnly("org.springframework.boot:spring-boot-devtools:$springVersion")
 
@@ -43,9 +44,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation:$springVersion")
     implementation("org.springframework.boot:spring-boot-starter-web:$springVersion")
     implementation("org.springframework.boot:spring-boot-starter-webflux:$springVersion")
-    implementation("org.web3j:core:${web3jCoreVersion}")
-    implementation("org.mapstruct:mapstruct:${mapStructVersion}")
-    implementation("io.jsonwebtoken:jjwt-api:${jwtVersion}")
+    implementation("org.web3j:core:$web3jCoreVersion")
+    implementation("org.mapstruct:mapstruct:$mapStructVersion")
+    implementation("io.jsonwebtoken:jjwt-api:$jwtVersion")
+    implementation("me.paulschwarz:spring-dotenv:$springDotEnv")
 
     compileOnly("org.projectlombok:lombok:$lombokVersion")
 

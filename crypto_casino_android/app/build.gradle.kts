@@ -1,9 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
 android {
@@ -32,22 +40,22 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-                "\"http://10.0.2.2:8080/api/\""
+                "\"${localProperties.getProperty("BASE_URL")}\""
             )
             buildConfigField(
                 "String",
                 "ETHEREUM_RPC_URL",
-                "\"http://10.0.2.2:8545\""
+                "\"${localProperties.getProperty("ETHEREUM_RPC_URL")}\""
             )
             buildConfigField(
                 "String",
                 "CASINO_TOKEN_ADDRESS",
-                "\"0x5FbDB2315678afecb367f032d93F642f64180aa3\""
+                "\"${localProperties.getProperty("CASINO_TOKEN_ADDRESS")}\""
             )
             buildConfigField(
                 "String",
                 "CASINO_VAULT_ADDRESS",
-                "\"0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\""
+                "\"${localProperties.getProperty("CASINO_VAULT_ADDRESS")}\""
             )
         }
         release {
@@ -55,6 +63,26 @@ android {
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
+            )
+            buildConfigField(
+                "String",
+                "BASE_URL",
+                "\"${localProperties.getProperty("BASE_URL")}\""
+            )
+            buildConfigField(
+                "String",
+                "ETHEREUM_RPC_URL",
+                "\"${localProperties.getProperty("ETHEREUM_RPC_URL")}\""
+            )
+            buildConfigField(
+                "String",
+                "CASINO_TOKEN_ADDRESS",
+                "\"${localProperties.getProperty("CASINO_TOKEN_ADDRESS")}\""
+            )
+            buildConfigField(
+                "String",
+                "CASINO_VAULT_ADDRESS",
+                "\"${localProperties.getProperty("CASINO_VAULT_ADDRESS")}\""
             )
         }
     }

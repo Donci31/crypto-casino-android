@@ -78,7 +78,7 @@ fun BlockchainTransactionsScreen(
                 items(
                     count = lazyPagingItems.itemCount,
                     key = lazyPagingItems.itemKey { transaction ->
-                        "${transaction.txHash}-${transaction.logIndex}"
+                        "${transaction.txHash}-${transaction.blockNumber}-${transaction.logIndex}"
                     }
                 ) { index ->
                     val transaction = lazyPagingItems[index]

@@ -1,0 +1,10 @@
+# Android SDK location
+sdk.dir=C\:\\Users\\YourUsername\\AppData\\Local\\Android\\Sdk
+
+# Backend API Configuration
+BASE_URL=http://10.0.2.2:8080/api/
+ETHEREUM_RPC_URL=http://10.0.2.2:8545
+
+# Smart Contract Addresses
+CASINO_TOKEN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+CASINO_VAULT_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512

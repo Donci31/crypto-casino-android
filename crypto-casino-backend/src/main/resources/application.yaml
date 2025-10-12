@@ -26,22 +26,22 @@ application:
         expiration: 604800000 # 7 days for refresh token
 
 web3j:
-  rpc-address: http://localhost:8545
-  ws-address: ws://localhost:8545
-  gas-price: 20000000000
-  gas-limit: 6721975
+  rpc-address: ${WEB3J_RPC_ADDRESS}
+  ws-address: ${WEB3J_WS_ADDRESS}
+  gas-price: ${WEB3J_GAS_PRICE}
+  gas-limit: ${WEB3J_GAS_LIMIT}
   contract:
-    casino-token: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
-    casino-vault: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
-    slot-machine: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+    casino-token: ${CONTRACT_CASINO_TOKEN}
+    casino-vault: ${CONTRACT_CASINO_VAULT}
+    slot-machine: ${CONTRACT_SLOT_MACHINE}
 
 wallet:
   master-wallet:
-    private-key: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-    address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    private-key: ${WALLET_MASTER_PRIVATE_KEY}
+    address: ${WALLET_MASTER_ADDRESS}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT}
   error:
     include-message: always
     include-binding-errors: always
