@@ -24,6 +24,9 @@ class BlockchainTransactionsViewModel @Inject constructor(
     private val _transactionState = MutableStateFlow<ApiResult<BlockchainTransaction>?>(null)
     val transactionState: StateFlow<ApiResult<BlockchainTransaction>?> = _transactionState
 
+    private val _selectedTransaction = MutableStateFlow<BlockchainTransaction?>(null)
+    val selectedTransaction: StateFlow<BlockchainTransaction?> = _selectedTransaction
+
     fun getTransactionByHash(txHash: String) {
         viewModelScope.launch {
             _transactionState.value = ApiResult.Loading
@@ -31,5 +34,26 @@ class BlockchainTransactionsViewModel @Inject constructor(
                 _transactionState.value = result
             }
         }
+    }
+
+    fun getTransactionByCompositeKey(txHash: String, blockNumber: Long, logIndex: Int) {
+        viewModelScope.launch {
+            _transactionState.value = ApiResult.Loading
+            transactionRepository.getTransactionByCompositeKey(txHash, blockNumber, logIndex).collect { result ->
+                _transactionState.value = result
+            }
+        }
+    }
+
+    fun setSelectedTransaction(transaction: BlockchainTransaction) {
+        _selectedTransaction.value = transaction
+    }
+
+    fun clearSelectedTransaction() {
+        _selectedTransaction.value = null
+    }
+
+    fun clearTransactionState() {
+        _transactionState.value = null
     }
 }

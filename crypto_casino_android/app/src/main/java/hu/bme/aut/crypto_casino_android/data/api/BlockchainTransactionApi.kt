@@ -16,4 +16,11 @@ interface BlockchainTransactionApi {
 
     @GET("/api/transactions/{txHash}")
     suspend fun getTransactionByHash(@Path("txHash") txHash: String): Response<BlockchainTransaction>
+
+    @GET("/api/transactions/{txHash}/{blockNumber}/{logIndex}")
+    suspend fun getTransactionByCompositeKey(
+        @Path("txHash") txHash: String,
+        @Path("blockNumber") blockNumber: Long,
+        @Path("logIndex") logIndex: Int
+    ): Response<BlockchainTransaction>
 }

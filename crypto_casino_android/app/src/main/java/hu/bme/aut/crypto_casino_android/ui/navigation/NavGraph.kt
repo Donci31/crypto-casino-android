@@ -10,6 +10,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -20,6 +21,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.google.gson.Gson
+import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
 import hu.bme.aut.crypto_casino_android.ui.presentation.auth.LoginScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.auth.RegisterScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.home.HomeScreen
@@ -86,10 +89,16 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.Transactions.route) {
+        composable(Screen.Transactions.route) { transactionsEntry ->
             BlockchainTransactionsScreen(
-                onTransactionClick = { transactionHash ->
-                    navController.navigate(Screen.TransactionDetail.createRoute(transactionHash))
+                onTransactionClick = { transaction ->
+                    navController.navigate(
+                        Screen.TransactionDetail.createRoute(
+                            transaction.txHash,
+                            transaction.blockNumber,
+                            transaction.logIndex
+                        )
+                    )
                 }
             )
         }
@@ -99,15 +108,32 @@ fun NavGraph(
             arguments = listOf(
                 navArgument("transactionHash") {
                     type = NavType.StringType
+                },
+                navArgument("blockNumber") {
+                    type = NavType.LongType
+                },
+                navArgument("logIndex") {
+                    type = NavType.IntType
                 }
             )
         ) { backStackEntry ->
             val transactionHash = backStackEntry.arguments?.getString("transactionHash") ?: ""
+            val blockNumber = backStackEntry.arguments?.getLong("blockNumber") ?: 0L
+            val logIndex = backStackEntry.arguments?.getInt("logIndex") ?: 0
+
+            // Get the parent entry to share the ViewModel
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Screen.Transactions.route)
+            }
+
             BlockchainTransactionDetailScreen(
                 transactionHash = transactionHash,
+                blockNumber = blockNumber,
+                logIndex = logIndex,
                 onNavigateBack = {
                     navController.popBackStack()
-                }
+                },
+                parentEntry = parentEntry
             )
         }
 

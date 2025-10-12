@@ -40,4 +40,8 @@ class BlockchainTransactionRepository @Inject constructor(
     fun getTransactionByHash(txHash: String): Flow<ApiResult<BlockchainTransaction>> {
         return safeApiFlow { api.getTransactionByHash(txHash) }
     }
+
+    fun getTransactionByCompositeKey(txHash: String, blockNumber: Long, logIndex: Int): Flow<ApiResult<BlockchainTransaction>> {
+        return safeApiFlow { api.getTransactionByCompositeKey(txHash, blockNumber, logIndex) }
+    }
 }

@@ -6,8 +6,9 @@ sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Wallet : Screen("wallet")
     object Transactions : Screen("blockchain-transactions")
-    object TransactionDetail : Screen("blockchain-transaction/{transactionHash}") {
-        fun createRoute(transactionHash: String): String = "blockchain-transaction/$transactionHash"
+    object TransactionDetail : Screen("blockchain-transaction/{transactionHash}/{blockNumber}/{logIndex}") {
+        fun createRoute(transactionHash: String, blockNumber: Long, logIndex: Int): String =
+            "blockchain-transaction/$transactionHash/$blockNumber/$logIndex"
     }
     object Profile : Screen("profile")
     object SlotMachine : Screen("slot-machine")

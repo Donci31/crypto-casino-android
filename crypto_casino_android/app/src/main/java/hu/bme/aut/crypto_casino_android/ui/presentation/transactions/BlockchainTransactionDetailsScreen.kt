@@ -55,6 +55,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import android.util.Log
+import androidx.navigation.NavBackStackEntry
+import androidx.paging.compose.collectAsLazyPagingItems
 import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
 import hu.bme.aut.crypto_casino_android.data.model.transaction.TransactionType
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
@@ -72,14 +75,22 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun BlockchainTransactionDetailScreen(
     transactionHash: String,
+    blockNumber: Long,
+    logIndex: Int,
     onNavigateBack: () -> Unit,
-    viewModel: BlockchainTransactionsViewModel = hiltViewModel()
+    parentEntry: NavBackStackEntry,
+    viewModel: BlockchainTransactionsViewModel = hiltViewModel(parentEntry)
 ) {
-    val transactionState by viewModel.transactionState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(transactionHash) {
-        viewModel.getTransactionByHash(transactionHash)
+    // Get the paged transactions and find the one matching the composite key
+    val transactions = viewModel.transactions.collectAsLazyPagingItems()
+    val matchingTransaction = remember(transactionHash, blockNumber, logIndex, transactions.itemSnapshotList.items) {
+        transactions.itemSnapshotList.items.find { tx ->
+            tx.txHash == transactionHash &&
+            tx.blockNumber == blockNumber &&
+            tx.logIndex == logIndex
+        }
     }
 
     Scaffold(
@@ -100,42 +111,12 @@ fun BlockchainTransactionDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when (transactionState) {
-                is ApiResult.Success -> {
-                    val transaction = (transactionState as ApiResult.Success<BlockchainTransaction>).data
-                    TransactionDetailContent(transaction, snackbarHostState)
-                }
-                is ApiResult.Error -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "Error loading transaction",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = (transactionState as ApiResult.Error).exception.message ?: "Unknown error",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.getTransactionByHash(transactionHash) }) {
-                            Text("Retry")
-                        }
-                    }
-                }
-                ApiResult.Loading, null -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
+            if (matchingTransaction != null) {
+                TransactionDetailContent(matchingTransaction, snackbarHostState)
+            } else {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
         }
     }

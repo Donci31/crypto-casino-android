@@ -1,6 +1,8 @@
 package hu.bme.aut.crypto_casino_android.ui.presentation.transactions
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
+import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,7 +34,7 @@ import hu.bme.aut.crypto_casino_android.ui.components.BlockchainTransactionItem
 
 @Composable
 fun BlockchainTransactionsScreen(
-    onTransactionClick: (String) -> Unit,
+    onTransactionClick: (BlockchainTransaction) -> Unit,
     viewModel: BlockchainTransactionsViewModel = hiltViewModel()
 ) {
     val lazyPagingItems = viewModel.transactions.collectAsLazyPagingItems()
@@ -90,7 +92,11 @@ fun BlockchainTransactionsScreen(
                     if (transaction != null) {
                         BlockchainTransactionItem(
                             transaction = transaction,
-                            onClick = { onTransactionClick(transaction.txHash) }
+                            onClick = { tx ->
+                                Log.d("TxList", "Clicked transaction: ${tx.txHash}, block: ${tx.blockNumber}, logIndex: ${tx.logIndex}, type: ${tx.eventType}")
+                                viewModel.setSelectedTransaction(tx)
+                                onTransactionClick(tx)
+                            }
                         )
                     } else {
                         // Placeholder for loading items
