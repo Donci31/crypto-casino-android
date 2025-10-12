@@ -180,7 +180,7 @@ fun WalletScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f)),
+                        .background(MaterialTheme.colorScheme.scrim),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()

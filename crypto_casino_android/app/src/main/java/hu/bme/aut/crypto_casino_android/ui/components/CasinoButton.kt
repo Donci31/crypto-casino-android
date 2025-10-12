@@ -32,9 +32,9 @@ fun CasinoButton(
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isSecondary) Secondary else Primary,
-            contentColor = Color.White,
-            disabledContainerColor = Color.Gray.copy(alpha = 0.3f),
-            disabledContentColor = Color.White.copy(alpha = 0.3f)
+            contentColor = MaterialTheme.colorScheme.background,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
         )
     ) {
         Text(

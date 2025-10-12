@@ -20,6 +20,7 @@ class MainViewModel @Inject constructor(
 
     init {
         checkAuthState()
+        observeAuthToken()
     }
 
     private fun checkAuthState() {
@@ -30,6 +31,17 @@ class MainViewModel @Inject constructor(
                 AuthState.Authenticated
             } else {
                 AuthState.Unauthenticated
+            }
+        }
+    }
+
+    private fun observeAuthToken() {
+        viewModelScope.launch {
+            authRepository.getAuthToken().collect { token ->
+                // Only update to Unauthenticated if we were previously authenticated and token is now null
+                if (token.isNullOrEmpty() && _authState.value == AuthState.Authenticated) {
+                    _authState.value = AuthState.Unauthenticated
+                }
             }
         }
     }

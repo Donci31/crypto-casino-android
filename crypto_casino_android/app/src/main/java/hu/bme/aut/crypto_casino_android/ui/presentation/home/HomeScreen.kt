@@ -37,6 +37,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import hu.bme.aut.crypto_casino_android.ui.theme.Amber
+import hu.bme.aut.crypto_casino_android.ui.theme.Primary
+import hu.bme.aut.crypto_casino_android.ui.theme.Secondary
+import hu.bme.aut.crypto_casino_android.ui.theme.Tertiary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,25 +82,25 @@ fun HomeScreen(
                 HomeItem(
                     title = "Slot Machine",
                     icon = Icons.Default.Casino,
-                    backgroundColor = Color(0xFF6A1B9A), // Purple
+                    backgroundColor = Tertiary,
                     onClick = onNavigateToSlotMachine
                 ),
                 HomeItem(
                     title = "Wallet",
                     icon = Icons.Default.AccountBalanceWallet,
-                    backgroundColor = Color(0xFF1E88E5), // Blue
+                    backgroundColor = Primary,
                     onClick = onNavigateToWallet
                 ),
                 HomeItem(
                     title = "Transactions",
                     icon = Icons.Default.History,
-                    backgroundColor = Color(0xFF43A047), // Green
+                    backgroundColor = Secondary,
                     onClick = onNavigateToTransactions
                 ),
                 HomeItem(
                     title = "Exchange",
                     icon = Icons.Default.CurrencyExchange,
-                    backgroundColor = Color(0xFFE53935), // Red
+                    backgroundColor = Amber,
                     onClick = {}
                 )
             )
@@ -145,7 +149,7 @@ fun HomeItemCard(item: HomeItem) {
                 Icon(
                     imageVector = item.icon,
                     contentDescription = item.title,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.background,
                     modifier = Modifier.padding(4.dp)
                 )
             }

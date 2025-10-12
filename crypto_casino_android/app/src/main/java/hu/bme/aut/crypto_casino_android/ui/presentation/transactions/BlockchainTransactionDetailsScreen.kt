@@ -1,6 +1,7 @@
 package hu.bme.aut.crypto_casino_android.ui.presentation.transactions
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,35 +11,61 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
+import hu.bme.aut.crypto_casino_android.data.model.transaction.TransactionType
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
+import hu.bme.aut.crypto_casino_android.data.util.FormatUtils
+import hu.bme.aut.crypto_casino_android.ui.theme.Amber
+import hu.bme.aut.crypto_casino_android.ui.theme.Bet
+import hu.bme.aut.crypto_casino_android.ui.theme.Purple
 import hu.bme.aut.crypto_casino_android.ui.theme.Success
+import hu.bme.aut.crypto_casino_android.ui.theme.Warning
+import hu.bme.aut.crypto_casino_android.ui.theme.Win
+import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,12 +76,14 @@ fun BlockchainTransactionDetailScreen(
     viewModel: BlockchainTransactionsViewModel = hiltViewModel()
 ) {
     val transactionState by viewModel.transactionState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(transactionHash) {
         viewModel.getTransactionByHash(transactionHash)
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Transaction Details") },
@@ -74,7 +103,7 @@ fun BlockchainTransactionDetailScreen(
             when (transactionState) {
                 is ApiResult.Success -> {
                     val transaction = (transactionState as ApiResult.Success<BlockchainTransaction>).data
-                    TransactionDetailContent(transaction)
+                    TransactionDetailContent(transaction, snackbarHostState)
                 }
                 is ApiResult.Error -> {
                     Column(
@@ -85,8 +114,16 @@ fun BlockchainTransactionDetailScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "Error loading transaction: ${(transactionState as ApiResult.Error).exception.message}",
-                            color = MaterialTheme.colorScheme.error
+                            text = "Error loading transaction",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = (transactionState as ApiResult.Error).exception.message ?: "Unknown error",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = { viewModel.getTransactionByHash(transactionHash) }) {
@@ -105,106 +142,257 @@ fun BlockchainTransactionDetailScreen(
 }
 
 @Composable
-fun TransactionDetailContent(transaction: BlockchainTransaction) {
+fun TransactionDetailContent(
+    transaction: BlockchainTransaction,
+    snackbarHostState: SnackbarHostState
+) {
+    val clipboardManager = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
+
+    val (icon, color, label) = when (transaction.eventType) {
+        TransactionType.DEPOSIT -> Triple(Icons.Default.ArrowDownward, Success, "Deposit")
+        TransactionType.WITHDRAWAL -> Triple(Icons.Default.ArrowUpward, Warning, "Withdrawal")
+        TransactionType.BET -> Triple(Icons.Default.Casino, Bet, "Bet")
+        TransactionType.WIN -> Triple(Icons.Default.EmojiEvents, Win, "Win")
+        TransactionType.TOKEN_PURCHASED -> Triple(Icons.Default.ShoppingCart, Purple, "Token Purchased")
+        TransactionType.TOKEN_EXCHANGED -> Triple(Icons.Default.SwapHoriz, Amber, "Token Exchanged")
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Transaction Status Card
+        // Transaction header with icon and amount
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = color.copy(alpha = 0.1f)
+            ),
+            shape = RoundedCornerShape(20.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Icon
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(color.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Blockchain Transaction",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(32.dp)
                     )
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(Success.copy(alpha = 0.1f))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = transaction.eventType.name,
-                            color = Success,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Transaction type
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Amount
                 Text(
-                    text = "Date: ${transaction.timestamp.format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss"))}",
-                    style = MaterialTheme.typography.bodyMedium
+                    text = when (transaction.eventType) {
+                        TransactionType.DEPOSIT, TransactionType.WIN, TransactionType.TOKEN_PURCHASED ->
+                            "+${FormatUtils.formatAmount(transaction.amount)} CST"
+                        TransactionType.WITHDRAWAL, TransactionType.BET, TransactionType.TOKEN_EXCHANGED ->
+                            "-${FormatUtils.formatAmount(transaction.amount)} CST"
+                    },
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = color
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // New balance
+                Text(
+                    text = "Balance: ${FormatUtils.formatAmount(transaction.newBalance)} CST",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        // Transaction Details Card
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Transaction info card
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Transaction Details",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    text = "Transaction Information",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                DetailRow("Transaction Hash", transaction.txHash)
-                DetailRow("Block Number", transaction.blockNumber.toString())
-                DetailRow("Log Index", transaction.logIndex.toString())
-                DetailRow("User Address", transaction.userAddress)
-                DetailRow("Amount", "${transaction.amount} CST")
-                DetailRow("New Balance", "${transaction.newBalance} CST")
+                // Timestamp
+                DetailRow(
+                    label = "Date & Time",
+                    value = transaction.timestamp.format(
+                        DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm:ss")
+                    )
+                )
 
-                transaction.gameAddress?.let {
-                    DetailRow("Game Address", it)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Block number
+                DetailRow(
+                    label = "Block Number",
+                    value = "#${transaction.blockNumber}"
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Log index
+                DetailRow(
+                    label = "Log Index",
+                    value = transaction.logIndex.toString()
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Blockchain details card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Blockchain Details",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Transaction hash
+                CopyableDetailRow(
+                    label = "Transaction Hash",
+                    value = transaction.txHash,
+                    onCopy = {
+                        clipboardManager.setText(AnnotatedString(transaction.txHash))
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Transaction hash copied")
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // User address
+                CopyableDetailRow(
+                    label = "User Address",
+                    value = transaction.userAddress,
+                    onCopy = {
+                        clipboardManager.setText(AnnotatedString(transaction.userAddress))
+                        scope.launch {
+                            snackbarHostState.showSnackbar("User address copied")
+                        }
+                    }
+                )
+
+                // Game address (if present)
+                transaction.gameAddress?.let { gameAddress ->
+                    Spacer(modifier = Modifier.height(12.dp))
+                    CopyableDetailRow(
+                        label = "Game Address",
+                        value = gameAddress,
+                        onCopy = {
+                            clipboardManager.setText(AnnotatedString(gameAddress))
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Game address copied")
+                            }
+                        }
+                    )
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
 @Composable
 fun DetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+    Column(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium
         )
     }
-    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+}
+
+@Composable
+fun CopyableDetailRow(
+    label: String,
+    value: String,
+    onCopy: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable { onCopy() }
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = FormatUtils.shortenAddress(value, 10, 8),
+                style = MaterialTheme.typography.bodyMedium,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.Default.ContentCopy,
+                contentDescription = "Copy",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
 }

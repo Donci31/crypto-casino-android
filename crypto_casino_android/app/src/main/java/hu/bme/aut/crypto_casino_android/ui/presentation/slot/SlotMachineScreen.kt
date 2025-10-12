@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import hu.bme.aut.crypto_casino_android.data.model.slot.GameHistoryResponse
+import hu.bme.aut.crypto_casino_android.ui.theme.ThemeColors
 import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 
@@ -168,7 +169,7 @@ fun SlotMachineTab(
             Text(
                 text = message,
                 style = MaterialTheme.typography.titleLarge,
-                color = if (lastSpin.winAmount > BigDecimal.ZERO) Color.Green else Color.Red,
+                color = if (lastSpin.winAmount > BigDecimal.ZERO) ThemeColors.success else ThemeColors.error,
                 fontWeight = FontWeight.Bold
             )
 
@@ -328,7 +329,7 @@ fun ReelDisplay(
         modifier = Modifier
             .size(80.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(Color.DarkGray),
+            .background(ThemeColors.draculaReelBackground),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -337,8 +338,8 @@ fun ReelDisplay(
             fontSize = 36.sp,
             fontWeight = FontWeight.Bold,
             color = when (displayValue) {
-                7 -> Color(0xFFFFD700) // Gold color for 7
-                else -> Color.White
+                7 -> ThemeColors.draculaGold
+                else -> MaterialTheme.colorScheme.onSurface
             },
             textAlign = TextAlign.Center
         )
@@ -431,13 +432,13 @@ fun GameHistoryItem(game: GameHistoryResponse) {
                                     .size(40.dp)
                                     .padding(end = 4.dp)
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(Color.DarkGray),
+                                    .background(ThemeColors.draculaReelBackground),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = value.toString(),
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = if (value == 7) Color(0xFFFFD700) else Color.White
+                                    color = if (value == 7) ThemeColors.draculaGold else MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
@@ -457,7 +458,7 @@ fun GameHistoryItem(game: GameHistoryResponse) {
                     Text(
                         text = "Win: ${game.winAmount} CST",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (game.winAmount > BigDecimal.ZERO) Color.Green else Color.Red,
+                        color = if (game.winAmount > BigDecimal.ZERO) ThemeColors.success else ThemeColors.error,
                         fontWeight = FontWeight.Bold
                     )
                 }

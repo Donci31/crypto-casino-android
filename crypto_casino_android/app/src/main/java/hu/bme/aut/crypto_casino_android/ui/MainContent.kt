@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -23,6 +26,19 @@ fun MainContent(
 ) {
     val navController = rememberNavController()
     val authState by viewModel.authState.collectAsState()
+
+    var previousAuthState by remember { mutableStateOf<MainViewModel.AuthState?>(null) }
+
+    LaunchedEffect(authState) {
+        if (previousAuthState == MainViewModel.AuthState.Authenticated
+            && authState == MainViewModel.AuthState.Unauthenticated) {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+        previousAuthState = authState
+    }
 
     when (authState) {
         MainViewModel.AuthState.Loading -> {

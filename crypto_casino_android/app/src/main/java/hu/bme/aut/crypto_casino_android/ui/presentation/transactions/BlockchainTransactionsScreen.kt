@@ -63,22 +63,27 @@ fun BlockchainTransactionsScreen(
         if (lazyPagingItems.itemCount > 0) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
                     Text(
-                        text = "Blockchain Transactions",
-                        style = MaterialTheme.typography.headlineSmall,
+                        text = "Transactions",
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
                 }
 
                 items(
                     count = lazyPagingItems.itemCount,
-                    key = lazyPagingItems.itemKey { transaction ->
-                        "${transaction.txHash}-${transaction.blockNumber}-${transaction.logIndex}"
+                    key = { index ->
+                        val transaction = lazyPagingItems[index]
+                        if (transaction != null) {
+                            "${transaction.txHash}-${transaction.blockNumber}-${transaction.logIndex}-$index"
+                        } else {
+                            "placeholder-$index"
+                        }
                     }
                 ) { index ->
                     val transaction = lazyPagingItems[index]
