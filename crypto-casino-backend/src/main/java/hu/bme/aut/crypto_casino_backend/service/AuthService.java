@@ -10,9 +10,11 @@ import hu.bme.aut.crypto_casino_backend.mapper.UserMapper;
 import hu.bme.aut.crypto_casino_backend.model.User;
 import hu.bme.aut.crypto_casino_backend.repository.UserRepository;
 import hu.bme.aut.crypto_casino_backend.security.JwtService;
+import hu.bme.aut.crypto_casino_backend.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,15 +57,40 @@ public class AuthService {
 
 		User user = userRepository.findByUsernameOrEmail(loginDto.getUsernameOrEmail(), loginDto.getUsernameOrEmail())
 			.orElseThrow(() -> new ResourceNotFoundException("User not found"));
-		userRepository.save(user);
 
-		String jwtToken = jwtService.generateToken(org.springframework.security.core.userdetails.User.builder()
-			.username(user.getUsername())
-			.password(user.getPasswordHash())
-			.authorities("ROLE_USER")
-			.build());
+		UserDetails userDetails = UserPrincipal.create(user);
 
-		return AuthResponseDto.builder().token(jwtToken).tokenType("Bearer").user(userMapper.toDto(user)).build();
+		String accessToken = jwtService.generateToken(userDetails);
+		String refreshToken = jwtService.generateRefreshToken(userDetails);
+
+		return AuthResponseDto.builder()
+			.token(accessToken)
+			.refreshToken(refreshToken)
+			.tokenType("Bearer")
+			.user(userMapper.toDto(user))
+			.build();
+	}
+
+	public AuthResponseDto refreshToken(String refreshToken) {
+		final String username = jwtService.extractUsername(refreshToken);
+		User user = userRepository.findByUsername(username)
+			.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+		UserDetails userDetails = UserPrincipal.create(user);
+
+		if (!jwtService.isTokenValid(refreshToken, userDetails)) {
+			throw new IllegalArgumentException("Invalid refresh token");
+		}
+
+		String newAccessToken = jwtService.generateToken(userDetails);
+		String newRefreshToken = jwtService.generateRefreshToken(userDetails);
+
+		return AuthResponseDto.builder()
+			.token(newAccessToken)
+			.refreshToken(newRefreshToken)
+			.tokenType("Bearer")
+			.user(userMapper.toDto(user))
+			.build();
 	}
 
 }

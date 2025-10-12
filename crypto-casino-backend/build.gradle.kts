@@ -2,7 +2,7 @@ plugins {
     java
     id("org.springframework.boot") version "3.4.4"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.web3j") version "4.13.0"
+    id("org.web3j") version "4.12.3"
     id("io.spring.javaformat") version "0.0.47"
 }
 

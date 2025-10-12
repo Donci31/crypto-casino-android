@@ -29,8 +29,16 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/api/\"")
-            buildConfigField("String", "ETHEREUM_RPC_URL", "\"http://10.0.2.2:8545\"")
+            buildConfigField(
+                "String",
+                "BASE_URL",
+                "\"http://10.0.2.2:8080/api/\""
+            )
+            buildConfigField(
+                "String",
+                "ETHEREUM_RPC_URL",
+                "\"http://10.0.2.2:8545\""
+            )
             buildConfigField(
                 "String",
                 "CASINO_TOKEN_ADDRESS",

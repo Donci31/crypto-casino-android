@@ -1,18 +1,24 @@
+# Root .gitattributes for monorepo
 # Auto detect text files and normalize to LF
 * text=auto eol=lf
 
-# Java source files
+# Source files
+*.js text eol=lf
+*.ts text eol=lf
 *.java text eol=lf
 *.kt text eol=lf
 *.kts text eol=lf
-*.gradle text eol=lf
-*.properties text eol=lf
+*.sol text eol=lf
 
 # Configuration files
+*.json text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
 *.xml text eol=lf
-*.json text eol=lf
+*.toml text eol=lf
+*.gradle text eol=lf
+*.properties text eol=lf
+*.lock text eol=lf
 .gitignore text eol=lf
 .gitattributes text eol=lf
 
@@ -20,11 +26,11 @@
 *.md text eol=lf
 *.txt text eol=lf
 
-# Shell scripts (Gradle wrapper)
+# Shell scripts
 gradlew text eol=lf
 *.sh text eol=lf
 
-# Windows scripts (Gradle wrapper)
+# Windows scripts
 gradlew.bat text eol=crlf
 *.bat text eol=crlf
 *.cmd text eol=crlf
@@ -33,9 +39,16 @@ gradlew.bat text eol=crlf
 # Binary files
 *.jar binary
 *.class binary
+*.dex binary
+*.ap_ binary
+*.apk binary
+*.aab binary
 *.png binary
 *.jpg binary
 *.jpeg binary
 *.gif binary
+*.webp binary
 *.ico binary
 *.pdf binary
+*.so binary
+*.zip binary

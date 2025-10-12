@@ -92,7 +92,6 @@ fun BlockchainTransactionItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Transaction icon
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -107,7 +106,6 @@ fun BlockchainTransactionItem(
                 )
             }
 
-            // Transaction details
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -132,7 +130,6 @@ fun BlockchainTransactionItem(
                 )
             }
 
-            // Amount and balance
             Column(
                 horizontalAlignment = Alignment.End
             ) {

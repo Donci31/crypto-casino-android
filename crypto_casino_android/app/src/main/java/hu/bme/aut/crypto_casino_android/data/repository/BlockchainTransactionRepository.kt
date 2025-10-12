@@ -16,12 +16,22 @@ import javax.inject.Singleton
 class BlockchainTransactionRepository @Inject constructor(
     private val api: BlockchainTransactionApi
 ) {
-    fun getTransactions(pageSize: Int = 20): Flow<PagingData<BlockchainTransaction>> {
+    /**
+     * Returns a Flow of PagingData for infinite scroll transactions list.
+     *
+     * PagingConfig parameters:
+     * - pageSize: Number of items to load per page
+     * - enablePlaceholders: false to avoid showing null placeholders while loading
+     * - initialLoadSize: Number of items to load on initial load (same as pageSize for consistency)
+     * - prefetchDistance: How many items before the end should trigger the next page load
+     */
+    fun getTransactions(): Flow<PagingData<BlockchainTransaction>> {
         return Pager(
             config = PagingConfig(
-                pageSize = pageSize,
+                pageSize = 20,
                 enablePlaceholders = false,
-                initialLoadSize = pageSize
+                initialLoadSize = 20,
+                prefetchDistance = 5
             ),
             pagingSourceFactory = { BlockchainTransactionPagingSource(api) }
         ).flow

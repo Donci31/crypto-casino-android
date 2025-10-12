@@ -1,5 +1,6 @@
 package hu.bme.aut.crypto_casino_android.data.repository
 
+import android.util.Log
 import hu.bme.aut.crypto_casino_android.data.api.WalletApi
 import hu.bme.aut.crypto_casino_android.data.local.WalletKeyManager
 import hu.bme.aut.crypto_casino_android.data.model.wallet.BalanceResponse
@@ -20,19 +21,28 @@ class WalletRepository @Inject constructor(
     private val walletApiService: WalletApi,
     private val walletKeyManager: WalletKeyManager
 ) {
-    fun addWallet(address: String, label: String, isPrimary: Boolean = false): Flow<ApiResult<WalletResponse>> =
-        safeApiFlow { walletApiService.addWallet(WalletRequest(address, label, isPrimary)) }
+    fun addWallet(address: String, label: String, isPrimary: Boolean = false): Flow<ApiResult<WalletResponse>> {
+        Log.d(TAG, "Adding wallet: $address, label: $label, isPrimary: $isPrimary")
+        return safeApiFlow { walletApiService.addWallet(WalletRequest(address, label, isPrimary)) }
+    }
 
-    fun getUserWallets(): Flow<ApiResult<List<WalletResponse>>> =
-        safeApiFlow { walletApiService.getUserWallets() }
+    fun getUserWallets(): Flow<ApiResult<List<WalletResponse>>> {
+        Log.d(TAG, "Fetching user wallets")
+        return safeApiFlow { walletApiService.getUserWallets() }
+    }
 
-    fun setPrimaryWallet(walletId: Long): Flow<ApiResult<WalletResponse>> =
-        safeApiFlow { walletApiService.setPrimaryWallet(SetPrimaryRequest(walletId)) }
+    fun setPrimaryWallet(walletId: Long): Flow<ApiResult<WalletResponse>> {
+        Log.d(TAG, "Setting primary wallet: $walletId")
+        return safeApiFlow { walletApiService.setPrimaryWallet(SetPrimaryRequest(walletId)) }
+    }
 
-    fun getWalletBalance(walletId: Long): Flow<ApiResult<BalanceResponse>> =
-        safeApiFlow { walletApiService.getWalletBalance(walletId) }
+    fun getWalletBalance(walletId: Long): Flow<ApiResult<BalanceResponse>> {
+        Log.d(TAG, "Fetching balance for wallet: $walletId")
+        return safeApiFlow { walletApiService.getWalletBalance(walletId) }
+    }
 
     suspend fun saveWalletWithKey(address: String, privateKey: String, isPrimary: Boolean = false) {
+        Log.d(TAG, "Saving wallet with key: $address, isPrimary: $isPrimary")
         walletKeyManager.saveWalletKey(address, privateKey)
 
         if (isPrimary) {
@@ -67,10 +77,16 @@ class WalletRepository @Inject constructor(
     }
 
     suspend fun deleteWallet(address: String) {
+        Log.d(TAG, "Deleting wallet: $address")
         walletKeyManager.deleteWalletKey(address)
     }
 
     suspend fun clearAllWalletData() {
+        Log.d(TAG, "Clearing all wallet data")
         walletKeyManager.clearAllWalletKeys()
+    }
+
+    companion object {
+        private const val TAG = "WalletRepository"
     }
 }

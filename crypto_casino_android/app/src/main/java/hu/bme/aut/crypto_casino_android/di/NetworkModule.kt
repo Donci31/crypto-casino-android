@@ -11,6 +11,7 @@ import hu.bme.aut.crypto_casino_android.data.api.BlockchainTransactionApi
 import hu.bme.aut.crypto_casino_android.data.api.SlotMachineApiService
 import hu.bme.aut.crypto_casino_android.data.api.UserApi
 import hu.bme.aut.crypto_casino_android.data.api.WalletApi
+import hu.bme.aut.crypto_casino_android.data.interceptor.TokenRefreshInterceptor
 import hu.bme.aut.crypto_casino_android.data.local.TokenManager
 import hu.bme.aut.crypto_casino_android.data.util.LocalDateTimeAdapter
 import kotlinx.coroutines.flow.first
@@ -44,7 +45,7 @@ object NetworkModule {
     @Provides
     fun provideAuthInterceptor(tokenManager: TokenManager): Interceptor {
         return Interceptor { chain ->
-            val token = runBlocking { tokenManager.getToken.first() }
+            val token = runBlocking { tokenManager.getAccessToken.first() }
             val request = chain.request().newBuilder()
             if (!token.isNullOrEmpty()) {
                 request.addHeader("Authorization", "Bearer $token")
@@ -57,10 +58,12 @@ object NetworkModule {
     @Provides
     fun provideOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
-        authInterceptor: Interceptor
+        authInterceptor: Interceptor,
+        tokenRefreshInterceptor: TokenRefreshInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
+            .addInterceptor(tokenRefreshInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)

@@ -21,7 +21,9 @@ application:
   security:
     jwt:
       secret-key: ${JWT_SECRET_KEY}
-      expiration: 86400000
+      expiration: 900000 # 15 minutes for access token
+      refresh-token:
+        expiration: 604800000 # 7 days for refresh token
 
 web3j:
   rpc-address: http://localhost:8545
