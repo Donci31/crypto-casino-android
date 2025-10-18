@@ -1,9 +1,10 @@
 import { HardhatUserConfig } from "hardhat/config";
 import hardhatViem from "@nomicfoundation/hardhat-viem";
 import hardhatIgnitionViem from "@nomicfoundation/hardhat-ignition-viem";
+import hardhatNodeTestRunner from "@nomicfoundation/hardhat-node-test-runner";
 
 const config: HardhatUserConfig = {
-  plugins: [hardhatViem, hardhatIgnitionViem],
+  plugins: [hardhatViem, hardhatIgnitionViem, hardhatNodeTestRunner],
   solidity: {
     version: "0.8.26",
     settings: {
@@ -21,7 +22,10 @@ const config: HardhatUserConfig = {
   },
   paths: {
     sources: "./contracts",
-    tests: "./contracts",
+    tests: {
+      solidity: "./contracts",
+      nodejs: "./test",
+    },
     cache: "./cache",
     artifacts: "./artifacts",
   },
