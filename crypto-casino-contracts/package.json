@@ -1,9 +1,20 @@
 {
   "type": "module",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test solidity",
+    "clean": "hardhat clean",
+    "node": "hardhat node",
+    "deploy": "hardhat ignition deploy --network localhost ignition/modules/CasinoModule.ts"
+  },
   "devDependencies": {
+    "@nomicfoundation/hardhat-ignition": "^3.0.3",
     "@nomicfoundation/hardhat-ignition-viem": "^3.0.3",
+    "@nomicfoundation/hardhat-viem": "^3.0.0",
     "@openzeppelin/contracts": "^5.4.0",
     "@types/node": "^24.6.2",
-    "hardhat": "^3.0.6"
+    "forge-std": "github:foundry-rs/forge-std#v1.9.7",
+    "hardhat": "^3.0.6",
+    "hardhat-viem": "^1.0.0"
   }
 }

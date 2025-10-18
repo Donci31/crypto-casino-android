@@ -1,9 +1,18 @@
 import { HardhatUserConfig } from "hardhat/config";
-import hardhatIgnitionViemPlugin from "@nomicfoundation/hardhat-ignition-viem";
+import hardhatViem from "@nomicfoundation/hardhat-viem";
+import hardhatIgnitionViem from "@nomicfoundation/hardhat-ignition-viem";
 
 const config: HardhatUserConfig = {
-  plugins: [hardhatIgnitionViemPlugin],
-  solidity: "0.8.26",
+  plugins: [hardhatViem, hardhatIgnitionViem],
+  solidity: {
+    version: "0.8.26",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
   networks: {
     localhost: {
       type: "http",
@@ -12,7 +21,7 @@ const config: HardhatUserConfig = {
   },
   paths: {
     sources: "./contracts",
-    tests: "./test",
+    tests: "./contracts",
     cache: "./cache",
     artifacts: "./artifacts",
   },
