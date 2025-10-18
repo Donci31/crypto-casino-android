@@ -26,7 +26,6 @@ public class SlotMachineController {
 	private final SlotMachineService slotMachineService;
 
 	@PostMapping("/spin")
-	@PreAuthorize("hasRole('USER')")
 	public CompletableFuture<ResponseEntity<SpinResponse>> spin(@AuthenticationPrincipal UserPrincipal currentUser,
 			@Valid @RequestBody SpinRequest request) {
 		log.info("Spin request from user: {}, bet: {}", currentUser.getUsername(), request.getBetAmount());
@@ -44,7 +43,6 @@ public class SlotMachineController {
 	}
 
 	@GetMapping("/history")
-	@PreAuthorize("hasRole('USER')")
 	public ResponseEntity<List<GameHistoryResponse>> getHistory(@AuthenticationPrincipal UserPrincipal currentUser) {
 		log.info("Game history request for user: {}", currentUser.getUsername());
 		List<GameHistoryResponse> history = slotMachineService.getGameHistory(currentUser.getId());
@@ -53,7 +51,6 @@ public class SlotMachineController {
 	}
 
 	@GetMapping("/balance")
-	@PreAuthorize("hasRole('USER')")
 	public ResponseEntity<BalanceResponse> getBalance(@AuthenticationPrincipal UserPrincipal currentUser) {
 		log.info("Vault balance request for user: {}", currentUser.getUsername());
 		if (currentUser.getPrimaryWalletAddress() == null) {

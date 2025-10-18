@@ -3,6 +3,7 @@ package hu.bme.aut.crypto_casino_backend.service;
 import hu.bme.aut.crypto_casino_backend.dto.transaction.BlockchainTransactionDto;
 import hu.bme.aut.crypto_casino_backend.mapper.BlockchainTransactionMapper;
 import hu.bme.aut.crypto_casino_backend.model.BlockchainTransaction;
+import hu.bme.aut.crypto_casino_backend.model.UserWallet;
 import hu.bme.aut.crypto_casino_backend.repository.BlockchainTransactionRepository;
 import hu.bme.aut.crypto_casino_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,10 +40,12 @@ public class BlockchainTransactionService {
 	}
 
 	private String getUserAddressByUsername(String username) {
-		return userRepository.findByUsername(username)
-			.orElseThrow(() -> new IllegalArgumentException("User not found"))
-			.getPrimaryWallet()
-			.getAddress();
+		var user = userRepository.findByUsername(username)
+			.orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+		return user.getPrimaryWallet()
+			.map(UserWallet::getAddress)
+			.orElseThrow(() -> new IllegalStateException("User has no primary wallet configured"));
 	}
 
 }

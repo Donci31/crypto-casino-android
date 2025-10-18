@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Table(name = "users")
@@ -42,8 +43,8 @@ public class User {
 		createdAt = LocalDateTime.now();
 	}
 
-	public UserWallet getPrimaryWallet() {
-		return wallets.stream().filter(UserWallet::getIsPrimary).findFirst().orElse(null);
+	public Optional<UserWallet> getPrimaryWallet() {
+		return wallets.stream().filter(UserWallet::getIsPrimary).findFirst();
 	}
 
 }

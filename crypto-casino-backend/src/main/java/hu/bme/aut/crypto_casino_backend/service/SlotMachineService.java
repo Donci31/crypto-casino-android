@@ -25,6 +25,7 @@ import org.web3j.slotmachine.SlotMachine;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -138,7 +139,8 @@ public class SlotMachineService {
 				reels[1] = event.reels.get(1).intValue();
 				reels[2] = event.reels.get(2).intValue();
 
-				BigDecimal winAmount = new BigDecimal(event.winAmount).divide(BigDecimal.TEN.pow(18));
+				BigDecimal winAmount = new BigDecimal(event.winAmount).divide(BigDecimal.TEN.pow(18),
+						RoundingMode.DOWN);
 
 				BlockchainTransaction betTx = BlockchainTransaction.builder()
 					.txHash(receipt.getTransactionHash())
@@ -186,7 +188,7 @@ public class SlotMachineService {
 	public BigDecimal getVaultBalance(String walletAddress) {
 		try {
 			BigInteger balance = casinoVault.getBalance(walletAddress).send();
-			return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18));
+			return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
 		}
 		catch (Exception e) {
 			log.error("Error getting balance from blockchain", e);
@@ -202,8 +204,8 @@ public class SlotMachineService {
 			boolean isPaused = slotMachine.paused().send();
 
 			return SlotConfigResponse.builder()
-				.minBet(new BigDecimal(minBet).divide(BigDecimal.TEN.pow(18)))
-				.maxBet(new BigDecimal(maxBet).divide(BigDecimal.TEN.pow(18)))
+				.minBet(new BigDecimal(minBet).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN))
+				.maxBet(new BigDecimal(maxBet).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN))
 				.houseEdge(houseEdge.intValue())
 				.isActive(!isPaused)
 				.build();

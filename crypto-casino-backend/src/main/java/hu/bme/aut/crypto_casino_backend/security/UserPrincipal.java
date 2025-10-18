@@ -40,7 +40,7 @@ public class UserPrincipal implements UserDetails {
 			.map(UserWallet::getAddress)
 			.collect(Collectors.toList());
 
-		String primaryWalletAddress = user.getPrimaryWallet() != null ? user.getPrimaryWallet().getAddress() : null;
+		String primaryWalletAddress = user.getPrimaryWallet().map(UserWallet::getAddress).orElse(null);
 
 		return new UserPrincipal(user.getId(), user.getUsername(), user.getEmail(), user.getPasswordHash(),
 				walletAddresses, primaryWalletAddress, authorities);
