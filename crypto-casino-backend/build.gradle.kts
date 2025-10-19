@@ -36,6 +36,7 @@ dependencies {
     val mapStructVersion = "1.6.3"
     val jwtVersion = "0.12.6"
     val springDotEnv = "4.0.0"
+    val liquibaseVersion = "5.0.1"
 
     developmentOnly("org.springframework.boot:spring-boot-devtools:$springVersion")
 
@@ -44,6 +45,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation:$springVersion")
     implementation("org.springframework.boot:spring-boot-starter-web:$springVersion")
     implementation("org.springframework.boot:spring-boot-starter-webflux:$springVersion")
+    implementation("org.liquibase:liquibase-core:$liquibaseVersion")
     implementation("org.web3j:core:$web3jCoreVersion")
     implementation("org.mapstruct:mapstruct:$mapStructVersion")
     implementation("io.jsonwebtoken:jjwt-api:$jwtVersion")

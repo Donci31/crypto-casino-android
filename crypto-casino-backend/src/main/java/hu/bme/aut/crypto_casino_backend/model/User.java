@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Entity
-@Table(name = "users")
+@Table(name = "casino_user")
 @Data
 @Builder
 @NoArgsConstructor

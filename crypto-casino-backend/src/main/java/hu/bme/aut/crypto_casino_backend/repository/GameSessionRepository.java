@@ -17,8 +17,6 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
 
 	List<GameSession> findTop10ByUserOrderByCreatedAtDesc(User user);
 
-	Optional<GameSession> findByBlockchainSpinId(Long blockchainSpinId);
-
 	Page<GameSession> findByGameTypeOrderByCreatedAtDesc(String gameType, Pageable pageable);
 
 }

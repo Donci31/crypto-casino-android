@@ -34,197 +34,204 @@ import java.util.*;
 @Slf4j
 public class CasinoEventListenerService {
 
-    private final Web3j web3j;
-    private final BlockchainTransactionRepository transactionRepository;
-    private final Map<String, EventConfig> eventConfigs = new HashMap<>();
-    @Value("${web3j.contract.casino-token}")
-    private String tokenAddress;
-    @Value("${web3j.contract.casino-vault}")
-    private String vaultAddress;
-    private Disposable eventSubscription;
+	private final Web3j web3j;
 
-    public CasinoEventListenerService(@Qualifier("wsWeb3j") Web3j web3j,
-                                      BlockchainTransactionRepository transactionRepository) {
-        this.web3j = web3j;
-        this.transactionRepository = transactionRepository;
-    }
+	private final BlockchainTransactionRepository transactionRepository;
 
-    @PostConstruct
-    public void init() {
-        try {
-            initializeEventConfigs();
-            subscribeToEvents();
-            log.info("Casino Event Listener initialized successfully");
-        } catch (Exception e) {
-            log.error("Failed to initialize CasinoEventListenerService", e);
-        }
-    }
+	private final Map<String, EventConfig> eventConfigs = new HashMap<>();
 
-    private void initializeEventConfigs() {
-        registerEvent(CasinoToken.TOKENSPURCHASED_EVENT, BlockchainTransaction.TransactionType.TOKEN_PURCHASED,
-                EventStructure.SIMPLE);
-        registerEvent(CasinoToken.TOKENSEXCHANGED_EVENT, BlockchainTransaction.TransactionType.TOKEN_EXCHANGED,
-                EventStructure.SIMPLE);
-        registerEvent(CasinoVault.DEPOSIT_EVENT, BlockchainTransaction.TransactionType.DEPOSIT,
-                EventStructure.WITH_BALANCE);
-        registerEvent(CasinoVault.WITHDRAWAL_EVENT, BlockchainTransaction.TransactionType.WITHDRAWAL,
-                EventStructure.WITH_BALANCE);
-        registerEvent(CasinoVault.BETPLACED_EVENT, BlockchainTransaction.TransactionType.BET,
-                EventStructure.WITH_BALANCE_AND_GAME);
-        registerEvent(CasinoVault.WINPAID_EVENT, BlockchainTransaction.TransactionType.WIN,
-                EventStructure.WITH_BALANCE_AND_GAME);
+	@Value("${web3j.contract.casino-token}")
+	private String tokenAddress;
 
-        log.info("Registered {} event configurations", eventConfigs.size());
-    }
+	@Value("${web3j.contract.casino-vault}")
+	private String vaultAddress;
 
-    private void registerEvent(Event event, BlockchainTransaction.TransactionType type, EventStructure structure) {
-        String signature = EventEncoder.encode(event);
-        eventConfigs.put(signature, new EventConfig(event, type, structure));
-    }
+	private Disposable eventSubscription;
 
-    private void subscribeToEvents() {
-        eventSubscription = web3j.logsNotifications(Arrays.asList(tokenAddress, vaultAddress), Collections.emptyList())
-                .subscribe(event -> processEvent(event.getParams().getResult()),
-                        error -> log.error("Error in event subscription: {}", error.getMessage(), error));
+	public CasinoEventListenerService(@Qualifier("wsWeb3j") Web3j web3j,
+			BlockchainTransactionRepository transactionRepository) {
+		this.web3j = web3j;
+		this.transactionRepository = transactionRepository;
+	}
 
-        log.info("Subscribed to events for contracts: {} and {}", tokenAddress, vaultAddress);
-    }
+	@PostConstruct
+	public void init() {
+		try {
+			initializeEventConfigs();
+			subscribeToEvents();
+			log.info("Casino Event Listener initialized successfully");
+		}
+		catch (Exception e) {
+			log.error("Failed to initialize CasinoEventListenerService", e);
+		}
+	}
 
-    @PreDestroy
-    public void cleanup() {
-        if (eventSubscription != null && !eventSubscription.isDisposed()) {
-            eventSubscription.dispose();
-            log.info("Event subscription disposed");
-        }
-    }
+	private void initializeEventConfigs() {
+		registerEvent(CasinoToken.TOKENSPURCHASED_EVENT, BlockchainTransaction.TransactionType.TOKEN_PURCHASED,
+				EventStructure.SIMPLE);
+		registerEvent(CasinoToken.TOKENSEXCHANGED_EVENT, BlockchainTransaction.TransactionType.TOKEN_EXCHANGED,
+				EventStructure.SIMPLE);
+		registerEvent(CasinoVault.DEPOSIT_EVENT, BlockchainTransaction.TransactionType.DEPOSIT,
+				EventStructure.WITH_BALANCE);
+		registerEvent(CasinoVault.WITHDRAWAL_EVENT, BlockchainTransaction.TransactionType.WITHDRAWAL,
+				EventStructure.WITH_BALANCE);
+		registerEvent(CasinoVault.BETPLACED_EVENT, BlockchainTransaction.TransactionType.BET,
+				EventStructure.WITH_BALANCE_AND_GAME);
+		registerEvent(CasinoVault.WINPAID_EVENT, BlockchainTransaction.TransactionType.WIN,
+				EventStructure.WITH_BALANCE_AND_GAME);
 
-    @SuppressWarnings("rawtypes")
-    private void processEvent(Log eventLog) {
-        try {
-            String eventSignature = eventLog.getTopics().getFirst();
-            EventConfig config = eventConfigs.get(eventSignature);
+		log.info("Registered {} event configurations", eventConfigs.size());
+	}
 
-            if (config == null) {
-                log.debug("Ignoring unknown event: {}", eventSignature);
-                return;
-            }
+	private void registerEvent(Event event, BlockchainTransaction.TransactionType type, EventStructure structure) {
+		String signature = EventEncoder.encode(event);
+		eventConfigs.put(signature, new EventConfig(event, type, structure));
+	}
 
-            List<Type> indexedParams = extractIndexedParameters(config.event, eventLog);
-            List<Type> nonIndexedParams = extractNonIndexedParameters(config.event, eventLog);
+	private void subscribeToEvents() {
+		eventSubscription = web3j.logsNotifications(Arrays.asList(tokenAddress, vaultAddress), Collections.emptyList())
+			.subscribe(event -> processEvent(event.getParams().getResult()),
+					error -> log.error("Error in event subscription: {}", error.getMessage(), error));
 
-            BlockchainTransaction transaction = buildTransaction(eventLog, config, indexedParams, nonIndexedParams);
-            transactionRepository.save(transaction);
+		log.info("Subscribed to events for contracts: {} and {}", tokenAddress, vaultAddress);
+	}
 
-            log.info("Saved {} transaction: {} tokens for {}", config.type, transaction.getAmount(),
-                    transaction.getUserAddress());
-        } catch (Exception e) {
-            log.error("Error processing event: {}", eventLog, e);
-        }
-    }
+	@PreDestroy
+	public void cleanup() {
+		if (eventSubscription != null && !eventSubscription.isDisposed()) {
+			eventSubscription.dispose();
+			log.info("Event subscription disposed");
+		}
+	}
 
-    @SuppressWarnings("rawtypes")
-    private BlockchainTransaction buildTransaction(Log eventLog, EventConfig config, List<Type> indexedParams,
-                                                   List<Type> nonIndexedParams) {
-        String userAddress = ((Address) indexedParams.getFirst()).getValue().toLowerCase();
-        EventData eventData = extractEventData(config.structure, indexedParams, nonIndexedParams);
+	@SuppressWarnings("rawtypes")
+	private void processEvent(Log eventLog) {
+		try {
+			String eventSignature = eventLog.getTopics().getFirst();
+			EventConfig config = eventConfigs.get(eventSignature);
 
-        BlockchainTransaction.BlockchainTransactionBuilder builder = BlockchainTransaction.builder()
-                .txHash(eventLog.getTransactionHash())
-                .blockNumber(Numeric.toBigInt(eventLog.getBlockNumber()).longValue())
-                .logIndex(Numeric.toBigInt(eventLog.getLogIndex()).intValue())
-                .userAddress(userAddress)
-                .eventType(config.type)
-                .amount(eventData.amount)
-                .timestamp(eventData.timestamp);
+			if (config == null) {
+				log.debug("Ignoring unknown event: {}", eventSignature);
+				return;
+			}
 
-        if (eventData.newBalance != null) {
-            builder.newBalance(eventData.newBalance);
-        }
+			List<Type> indexedParams = extractIndexedParameters(config.event, eventLog);
+			List<Type> nonIndexedParams = extractNonIndexedParameters(config.event, eventLog);
 
-        if (eventData.gameAddress != null) {
-            builder.gameAddress(eventData.gameAddress);
-        }
+			BlockchainTransaction transaction = buildTransaction(eventLog, config, indexedParams, nonIndexedParams);
+			transactionRepository.save(transaction);
 
-        return builder.build();
-    }
+			log.info("Saved {} transaction: {} tokens for {}", config.type, transaction.getAmount(),
+					transaction.getUserAddress());
+		}
+		catch (Exception e) {
+			log.error("Error processing event: {}", eventLog, e);
+		}
+	}
 
-    @SuppressWarnings("rawtypes")
-    private EventData extractEventData(EventStructure structure, List<Type> indexedParams,
-                                       List<Type> nonIndexedParams) {
-        return switch (structure) {
-            case SIMPLE -> extractSimpleEventData(nonIndexedParams);
-            case WITH_BALANCE -> extractEventDataWithBalance(nonIndexedParams);
-            case WITH_BALANCE_AND_GAME -> extractEventDataWithBalanceAndGame(indexedParams, nonIndexedParams);
-        };
-    }
+	@SuppressWarnings("rawtypes")
+	private BlockchainTransaction buildTransaction(Log eventLog, EventConfig config, List<Type> indexedParams,
+			List<Type> nonIndexedParams) {
+		String userAddress = ((Address) indexedParams.getFirst()).getValue().toLowerCase();
+		EventData eventData = extractEventData(config.structure, indexedParams, nonIndexedParams);
 
-    @SuppressWarnings("rawtypes")
-    private EventData extractSimpleEventData(List<Type> nonIndexedParams) {
-        BigInteger amount = ((Uint256) nonIndexedParams.get(0)).getValue();
-        BigInteger timestamp = ((Uint256) nonIndexedParams.get(1)).getValue();
+		BlockchainTransaction.BlockchainTransactionBuilder builder = BlockchainTransaction.builder()
+			.txHash(eventLog.getTransactionHash())
+			.blockNumber(Numeric.toBigInt(eventLog.getBlockNumber()).longValue())
+			.logIndex(Numeric.toBigInt(eventLog.getLogIndex()).intValue())
+			.userAddress(userAddress)
+			.eventType(config.type)
+			.amount(eventData.amount)
+			.timestamp(eventData.timestamp);
 
-        return new EventData(convertToEther(amount), null, null, convertToLocalDateTime(timestamp));
-    }
+		if (eventData.newBalance != null) {
+			builder.newBalance(eventData.newBalance);
+		}
 
-    @SuppressWarnings("rawtypes")
-    private EventData extractEventDataWithBalance(List<Type> nonIndexedParams) {
-        BigInteger amount = ((Uint256) nonIndexedParams.get(0)).getValue();
-        BigInteger newBalance = ((Uint256) nonIndexedParams.get(1)).getValue();
-        BigInteger timestamp = ((Uint256) nonIndexedParams.get(2)).getValue();
+		if (eventData.gameAddress != null) {
+			builder.gameAddress(eventData.gameAddress);
+		}
 
-        return new EventData(convertToEther(amount), convertToEther(newBalance), null,
-                convertToLocalDateTime(timestamp));
-    }
+		return builder.build();
+	}
 
-    @SuppressWarnings("rawtypes")
-    private EventData extractEventDataWithBalanceAndGame(List<Type> indexedParams, List<Type> nonIndexedParams) {
-        String gameAddress = ((Address) indexedParams.get(1)).getValue().toLowerCase();
-        BigInteger amount = ((Uint256) nonIndexedParams.get(0)).getValue();
-        BigInteger newBalance = ((Uint256) nonIndexedParams.get(1)).getValue();
-        BigInteger timestamp = ((Uint256) nonIndexedParams.get(2)).getValue();
+	@SuppressWarnings("rawtypes")
+	private EventData extractEventData(EventStructure structure, List<Type> indexedParams,
+			List<Type> nonIndexedParams) {
+		return switch (structure) {
+			case SIMPLE -> extractSimpleEventData(nonIndexedParams);
+			case WITH_BALANCE -> extractEventDataWithBalance(nonIndexedParams);
+			case WITH_BALANCE_AND_GAME -> extractEventDataWithBalanceAndGame(indexedParams, nonIndexedParams);
+		};
+	}
 
-        return new EventData(convertToEther(amount), convertToEther(newBalance), gameAddress,
-                convertToLocalDateTime(timestamp));
-    }
+	@SuppressWarnings("rawtypes")
+	private EventData extractSimpleEventData(List<Type> nonIndexedParams) {
+		BigInteger amount = ((Uint256) nonIndexedParams.get(0)).getValue();
+		BigInteger timestamp = ((Uint256) nonIndexedParams.get(1)).getValue();
 
-    @SuppressWarnings("rawtypes")
-    private List<Type> extractIndexedParameters(Event event, Log eventLog) {
-        List<TypeReference<Type>> indexedParameters = event.getIndexedParameters();
-        List<String> topics = eventLog.getTopics();
+		return new EventData(convertToEther(amount), null, null, convertToLocalDateTime(timestamp));
+	}
 
-        List<Type> result = new ArrayList<>();
-        for (int i = 0; i < indexedParameters.size() && i + 1 < topics.size(); i++) {
-            String topic = topics.get(i + 1);
-            Type param = FunctionReturnDecoder.decodeIndexedValue(topic, indexedParameters.get(i));
-            result.add(param);
-        }
+	@SuppressWarnings("rawtypes")
+	private EventData extractEventDataWithBalance(List<Type> nonIndexedParams) {
+		BigInteger amount = ((Uint256) nonIndexedParams.get(0)).getValue();
+		BigInteger newBalance = ((Uint256) nonIndexedParams.get(1)).getValue();
+		BigInteger timestamp = ((Uint256) nonIndexedParams.get(2)).getValue();
 
-        return result;
-    }
+		return new EventData(convertToEther(amount), convertToEther(newBalance), null,
+				convertToLocalDateTime(timestamp));
+	}
 
-    @SuppressWarnings("rawtypes")
-    private List<Type> extractNonIndexedParameters(Event event, Log eventLog) {
-        return FunctionReturnDecoder.decode(eventLog.getData(), event.getNonIndexedParameters());
-    }
+	@SuppressWarnings("rawtypes")
+	private EventData extractEventDataWithBalanceAndGame(List<Type> indexedParams, List<Type> nonIndexedParams) {
+		String gameAddress = ((Address) indexedParams.get(1)).getValue().toLowerCase();
+		BigInteger amount = ((Uint256) nonIndexedParams.get(0)).getValue();
+		BigInteger newBalance = ((Uint256) nonIndexedParams.get(1)).getValue();
+		BigInteger timestamp = ((Uint256) nonIndexedParams.get(2)).getValue();
 
-    private BigDecimal convertToEther(BigInteger wei) {
-        return Convert.fromWei(new BigDecimal(wei), Convert.Unit.ETHER);
-    }
+		return new EventData(convertToEther(amount), convertToEther(newBalance), gameAddress,
+				convertToLocalDateTime(timestamp));
+	}
 
-    private LocalDateTime convertToLocalDateTime(BigInteger timestamp) {
-        return LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp.longValue()), ZoneId.systemDefault());
-    }
+	@SuppressWarnings("rawtypes")
+	private List<Type> extractIndexedParameters(Event event, Log eventLog) {
+		List<TypeReference<Type>> indexedParameters = event.getIndexedParameters();
+		List<String> topics = eventLog.getTopics();
 
-    private enum EventStructure {
+		List<Type> result = new ArrayList<>();
+		for (int i = 0; i < indexedParameters.size() && i + 1 < topics.size(); i++) {
+			String topic = topics.get(i + 1);
+			Type param = FunctionReturnDecoder.decodeIndexedValue(topic, indexedParameters.get(i));
+			result.add(param);
+		}
 
-        SIMPLE, WITH_BALANCE, WITH_BALANCE_AND_GAME
+		return result;
+	}
 
-    }
+	@SuppressWarnings("rawtypes")
+	private List<Type> extractNonIndexedParameters(Event event, Log eventLog) {
+		return FunctionReturnDecoder.decode(eventLog.getData(), event.getNonIndexedParameters());
+	}
 
-    private record EventConfig(Event event, BlockchainTransaction.TransactionType type, EventStructure structure) {
-    }
+	private BigDecimal convertToEther(BigInteger wei) {
+		return Convert.fromWei(new BigDecimal(wei), Convert.Unit.ETHER);
+	}
 
-    private record EventData(BigDecimal amount, BigDecimal newBalance, String gameAddress, LocalDateTime timestamp) {
-    }
+	private LocalDateTime convertToLocalDateTime(BigInteger timestamp) {
+		return LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp.longValue()), ZoneId.systemDefault());
+	}
+
+	private enum EventStructure {
+
+		SIMPLE, WITH_BALANCE, WITH_BALANCE_AND_GAME
+
+	}
+
+	private record EventConfig(Event event, BlockchainTransaction.TransactionType type, EventStructure structure) {
+	}
+
+	private record EventData(BigDecimal amount, BigDecimal newBalance, String gameAddress, LocalDateTime timestamp) {
+	}
 
 }

@@ -6,13 +6,16 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: true
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: true
   security:
     filter:
       order: 10
@@ -34,6 +37,7 @@ web3j:
     casino-token: ${CONTRACT_CASINO_TOKEN}
     casino-vault: ${CONTRACT_CASINO_VAULT}
     slot-machine: ${CONTRACT_SLOT_MACHINE}
+    dice: ${CONTRACT_DICE}
 
 wallet:
   master-wallet:

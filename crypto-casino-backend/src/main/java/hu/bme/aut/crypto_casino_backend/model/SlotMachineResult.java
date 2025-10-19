@@ -6,39 +6,32 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Entity
-@Table(name = "user_wallet")
+@Table(name = "slot_machine_result")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserWallet {
+public class SlotMachineResult {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne
-	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
-
-	@Column(nullable = false, unique = true, length = 42)
-	private String address;
+	@OneToOne
+	@JoinColumn(name = "game_session_id", nullable = false, unique = true)
+	private GameSession gameSession;
 
 	@Column(nullable = false)
-	private String label;
+	private Integer reel1;
 
 	@Column(nullable = false)
-	private Boolean isPrimary;
+	private Integer reel2;
 
 	@Column(nullable = false)
-	private LocalDateTime createdAt;
+	private Integer reel3;
 
-	@PrePersist
-	protected void onCreate() {
-		createdAt = LocalDateTime.now();
-	}
+	@Column(nullable = false)
+	private Long spinId;
 
 }

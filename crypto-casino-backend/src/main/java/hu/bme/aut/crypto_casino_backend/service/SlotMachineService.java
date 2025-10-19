@@ -1,6 +1,5 @@
 package hu.bme.aut.crypto_casino_backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import hu.bme.aut.crypto_casino_backend.config.Web3jConfig;
 import hu.bme.aut.crypto_casino_backend.dto.game.GameHistoryResponse;
 import hu.bme.aut.crypto_casino_backend.dto.game.SlotConfigResponse;
@@ -10,10 +9,12 @@ import hu.bme.aut.crypto_casino_backend.mapper.GameMapper;
 import hu.bme.aut.crypto_casino_backend.model.GameSession;
 import hu.bme.aut.crypto_casino_backend.model.User;
 import hu.bme.aut.crypto_casino_backend.model.UserWallet;
+import hu.bme.aut.crypto_casino_backend.model.SlotMachineResult;
 import hu.bme.aut.crypto_casino_backend.repository.BlockchainTransactionRepository;
 import hu.bme.aut.crypto_casino_backend.repository.GameSessionRepository;
 import hu.bme.aut.crypto_casino_backend.repository.UserRepository;
 import hu.bme.aut.crypto_casino_backend.repository.UserWalletRepository;
+import hu.bme.aut.crypto_casino_backend.repository.SlotMachineResultRepository;
 import hu.bme.aut.crypto_casino_backend.model.BlockchainTransaction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,11 +46,11 @@ public class SlotMachineService {
 
 	private final GameSessionRepository gameSessionRepository;
 
+	private final SlotMachineResultRepository slotMachineResultRepository;
+
 	private final BlockchainTransactionRepository blockchainTransactionRepository;
 
 	private final GameMapper gameMapper;
-
-	private final ObjectMapper objectMapper;
 
 	private final SlotMachine slotMachine;
 
@@ -93,13 +94,21 @@ public class SlotMachineService {
 
 		return executeSpinOnBlockchain(walletAddress, betAmount).thenApply(result -> {
 			try {
-				savedSession.setBlockchainSpinId(result.getSpinId());
 				savedSession.setWinAmount(result.getWinAmount());
-				savedSession.setGameResult(objectMapper.writeValueAsString(result));
 				savedSession.setIsResolved(true);
 				savedSession.setResolvedAt(LocalDateTime.now());
 
-				gameSessionRepository.save(savedSession);
+				GameSession updatedSession = gameSessionRepository.save(savedSession);
+
+				SlotMachineResult slotResult = SlotMachineResult.builder()
+					.gameSession(updatedSession)
+					.reel1(result.getReels()[0])
+					.reel2(result.getReels()[1])
+					.reel3(result.getReels()[2])
+					.spinId(result.getSpinId())
+					.build();
+
+				slotMachineResultRepository.save(slotResult);
 
 				BigDecimal newBalance = getVaultBalance(walletAddress);
 
@@ -120,7 +129,7 @@ public class SlotMachineService {
 		});
 	}
 
-	private CompletableFuture<SlotMachineResult> executeSpinOnBlockchain(String userAddress, BigDecimal betAmount) {
+	private CompletableFuture<SpinResultData> executeSpinOnBlockchain(String userAddress, BigDecimal betAmount) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
 				BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
@@ -169,7 +178,7 @@ public class SlotMachineService {
 					blockchainTransactionRepository.save(winTx);
 				}
 
-				return SlotMachineResult.builder()
+				return SpinResultData.builder()
 					.spinId(event.spinId.longValue())
 					.reels(reels)
 					.betAmount(betAmount)
@@ -228,9 +237,14 @@ public class SlotMachineService {
 			try {
 				GameHistoryResponse response = gameMapper.gameSessionToHistoryResponse(session);
 
-				SlotMachineResult result = objectMapper.readValue(session.getGameResult(), SlotMachineResult.class);
+				SlotMachineResult result = slotMachineResultRepository.findByGameSessionId(session.getId())
+					.orElse(null);
 
-				response.setReels(result.getReels());
+				if (result != null) {
+					response.setSpinId(result.getSpinId());
+					response.setReels(new int[] { result.getReel1(), result.getReel2(), result.getReel3() });
+				}
+
 				return response;
 			}
 			catch (Exception e) {
@@ -244,7 +258,7 @@ public class SlotMachineService {
 	@lombok.Builder
 	@lombok.AllArgsConstructor
 	@lombok.NoArgsConstructor
-	public static class SlotMachineResult {
+	public static class SpinResultData {
 
 		private Long spinId;
 

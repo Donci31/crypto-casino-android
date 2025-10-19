@@ -44,6 +44,8 @@ public class SecurityConfig {
 						.permitAll()
 						.requestMatchers("/api/games/slots/**")
 						.permitAll()
+						.requestMatchers("/api/games/dice/**")
+						.permitAll()
 						.requestMatchers("/api/users/**")
 						.authenticated()
 						.requestMatchers("/api/wallet/**")

@@ -1,0 +1,336 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-user-table
+      author: crypto-casino
+      changes:
+        - createTable:
+            tableName: casino_user
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(255)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 002-create-user-wallet-table
+      author: crypto-casino
+      changes:
+        - createTable:
+            tableName: user_wallet
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_user_wallet_user
+                    references: casino_user(id)
+              - column:
+                  name: address
+                  type: varchar(42)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: label
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_primary
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 003-create-blockchain-transaction-table
+      author: crypto-casino
+      changes:
+        - createTable:
+            tableName: blockchain_transaction
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tx_hash
+                  type: varchar(66)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: block_number
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: log_index
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_address
+                  type: varchar(42)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: decimal(38, 18)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: new_balance
+                  type: decimal(38, 18)
+              - column:
+                  name: game_address
+                  type: varchar(42)
+              - column:
+                  name: timestamp
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_blockchain_tx_user_address
+            tableName: blockchain_transaction
+            columns:
+              - column:
+                  name: user_address
+        - createIndex:
+            indexName: idx_blockchain_tx_event_type
+            tableName: blockchain_transaction
+            columns:
+              - column:
+                  name: event_type
+        - createIndex:
+            indexName: idx_blockchain_tx_timestamp
+            tableName: blockchain_transaction
+            columns:
+              - column:
+                  name: timestamp
+
+  - changeSet:
+      id: 004-create-game-session-table
+      author: crypto-casino
+      changes:
+        - createTable:
+            tableName: game_session
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_game_session_user
+                    references: casino_user(id)
+              - column:
+                  name: game_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bet_amount
+                  type: decimal(38, 18)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: win_amount
+                  type: decimal(38, 18)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_resolved
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: blockchain_tx_hash
+                  type: varchar(66)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: resolved_at
+                  type: timestamp
+        - createIndex:
+            indexName: idx_game_session_user_id
+            tableName: game_session
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            indexName: idx_game_session_game_type
+            tableName: game_session
+            columns:
+              - column:
+                  name: game_type
+
+  - changeSet:
+      id: 005-create-slot-machine-result-table
+      author: crypto-casino
+      changes:
+        - createTable:
+            tableName: slot_machine_result
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: game_session_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_slot_result_game_session
+                    references: game_session(id)
+              - column:
+                  name: reel_1
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reel_2
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reel_3
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: spin_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 006-create-dice-result-table
+      author: crypto-casino
+      changes:
+        - createTable:
+            tableName: dice_result
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: game_session_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_dice_result_game_session
+                    references: game_session(id)
+              - column:
+                  name: game_id
+                  type: numeric(78, 0)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: prediction
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bet_type
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: server_seed_hash
+                  type: varchar(66)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: server_seed
+                  type: varchar(66)
+              - column:
+                  name: client_seed
+                  type: varchar(66)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: result
+                  type: integer
+              - column:
+                  name: payout
+                  type: numeric(78, 0)
+              - column:
+                  name: settled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

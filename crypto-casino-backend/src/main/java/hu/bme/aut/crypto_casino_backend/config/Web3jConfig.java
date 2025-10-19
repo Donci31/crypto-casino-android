@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Primary;
 import org.web3j.casinotoken.CasinoToken;
 import org.web3j.casinovault.CasinoVault;
 import org.web3j.crypto.Credentials;
+import org.web3j.dice.Dice;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.protocol.websocket.WebSocketService;
@@ -43,6 +44,9 @@ public class Web3jConfig {
 
 	@Value("${web3j.contract.slot-machine}")
 	private String slotMachineAddress;
+
+	@Value("${web3j.contract.dice}")
+	private String diceAddress;
 
 	@Value("${wallet.master-wallet.private-key}")
 	private String masterWalletPrivateKey;
@@ -93,6 +97,15 @@ public class Web3jConfig {
 		log.info("Loading SlotMachine contract at address: {}", slotMachineAddress);
 
 		return SlotMachine.load(slotMachineAddress, web3j, masterWalletCredentials, gasProvider);
+	}
+
+	@Bean
+	public Dice diceContract(@Qualifier("httpWeb3j") Web3j web3j, Credentials masterWalletCredentials,
+			ContractGasProvider gasProvider) {
+
+		log.info("Loading Dice contract at address: {}", diceAddress);
+
+		return Dice.load(diceAddress, web3j, masterWalletCredentials, gasProvider);
 	}
 
 }

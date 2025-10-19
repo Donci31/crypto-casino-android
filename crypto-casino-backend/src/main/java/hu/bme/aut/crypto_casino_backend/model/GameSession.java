@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "game_sessions")
+@Table(name = "game_session")
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,23 +25,20 @@ public class GameSession {
 	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
 
-	@Column(nullable = false)
+	@Column(nullable = false, length = 50)
 	private String gameType;
 
-	@Column(name = "blockchain_spin_id")
-	private Long blockchainSpinId;
-
-	@Column(nullable = false)
+	@Column(nullable = false, precision = 38, scale = 18)
 	private BigDecimal betAmount;
 
-	@Column(nullable = false)
+	@Column(nullable = false, precision = 38, scale = 18)
 	private BigDecimal winAmount;
-
-	@Column
-	private String gameResult;
 
 	@Column(nullable = false)
 	private Boolean isResolved;
+
+	@Column(length = 66)
+	private String blockchainTxHash;
 
 	@Column(nullable = false)
 	private LocalDateTime createdAt;
