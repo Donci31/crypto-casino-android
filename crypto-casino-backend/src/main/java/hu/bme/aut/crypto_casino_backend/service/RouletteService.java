@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,8 +60,7 @@ public class RouletteService {
 	private final Map<Long, String> serverSeedStorage = new HashMap<>();
 
 	@Transactional
-	public CompletableFuture<RouletteGameCreatedResponse> createGame(Long userId, List<BetRequest> bets,
-			String clientSeedHex) {
+	public RouletteGameCreatedResponse createGame(Long userId, List<BetRequest> bets, String clientSeedHex) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
@@ -88,51 +86,45 @@ public class RouletteService {
 
 		GameSession savedSession = gameSessionRepository.save(gameSession);
 
-		return createGameOnBlockchain(walletAddress, bets, serverSeedHash, clientSeedHex).thenApply(gameId -> {
-			try {
-				serverSeedStorage.put(gameId, serverSeed);
+		Long gameId = createGameOnBlockchain(walletAddress, bets, serverSeedHash, clientSeedHex);
 
-				RouletteResult rouletteResult = RouletteResult.builder()
-					.gameSession(savedSession)
-					.gameId(BigInteger.valueOf(gameId))
-					.totalBetAmount(totalBetAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger())
-					.serverSeedHash(serverSeedHash)
-					.clientSeed(clientSeedHex)
-					.settled(false)
-					.bets(new ArrayList<>())
-					.build();
+		serverSeedStorage.put(gameId, serverSeed);
 
-				RouletteResult savedResult = rouletteResultRepository.save(rouletteResult);
+		RouletteResult rouletteResult = RouletteResult.builder()
+			.gameSession(savedSession)
+			.gameId(BigInteger.valueOf(gameId))
+			.totalBetAmount(totalBetAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger())
+			.serverSeedHash(serverSeedHash)
+			.clientSeed(clientSeedHex)
+			.settled(false)
+			.bets(new ArrayList<>())
+			.build();
 
-				List<RouletteBet> savedBets = bets.stream().map(betReq -> {
-					RouletteBet bet = RouletteBet.builder()
-						.rouletteResult(savedResult)
-						.betType(betReq.getBetType())
-						.amount(betReq.getAmount().multiply(BigDecimal.TEN.pow(18)).toBigInteger())
-						.number(betReq.getNumber())
-						.build();
-					return rouletteBetRepository.save(bet);
-				}).collect(Collectors.toList());
+		RouletteResult savedResult = rouletteResultRepository.save(rouletteResult);
 
-				savedResult.setBets(savedBets);
+		List<RouletteBet> savedBets = bets.stream().map(betReq -> {
+			RouletteBet bet = RouletteBet.builder()
+				.rouletteResult(savedResult)
+				.betType(betReq.getBetType())
+				.amount(betReq.getAmount().multiply(BigDecimal.TEN.pow(18)).toBigInteger())
+				.number(betReq.getNumber())
+				.build();
+			return rouletteBetRepository.save(bet);
+		}).collect(Collectors.toList());
 
-				return RouletteGameCreatedResponse.builder()
-					.gameId(gameId)
-					.serverSeedHash(serverSeedHash)
-					.bets(bets)
-					.totalBetAmount(totalBetAmount)
-					.timestamp(LocalDateTime.now())
-					.build();
-			}
-			catch (Exception e) {
-				log.error("Error saving roulette game", e);
-				throw new RuntimeException("Error saving roulette game", e);
-			}
-		});
+		savedResult.setBets(savedBets);
+
+		return RouletteGameCreatedResponse.builder()
+			.gameId(gameId)
+			.serverSeedHash(serverSeedHash)
+			.bets(bets)
+			.totalBetAmount(totalBetAmount)
+			.timestamp(LocalDateTime.now())
+			.build();
 	}
 
 	@Transactional
-	public CompletableFuture<RouletteGameSettledResponse> settleGame(Long userId, Long gameId) {
+	public RouletteGameSettledResponse settleGame(Long userId, Long gameId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
@@ -141,39 +133,37 @@ public class RouletteService {
 			throw new IllegalStateException("Server seed not found for game: " + gameId);
 		}
 
-		return settleGameOnBlockchain(gameId, serverSeed).thenApply(result -> {
-			try {
-				RouletteResult rouletteResult = rouletteResultRepository.findByGameSessionId(result.getGameSessionId())
-					.orElseThrow(() -> new ResourceNotFoundException("Roulette result not found"));
+		RouletteSettleResultData result = settleGameOnBlockchain(gameId, serverSeed);
 
-				rouletteResult.setServerSeed(serverSeed);
-				rouletteResult.setWinningNumber(result.getWinningNumber());
-				rouletteResult.setTotalPayout(result.getTotalPayout().multiply(BigDecimal.TEN.pow(18)).toBigInteger());
-				rouletteResult.setSettled(true);
+		RouletteResult rouletteResult = rouletteResultRepository.findByGameId(BigInteger.valueOf(gameId))
+			.orElseThrow(() -> new ResourceNotFoundException("Roulette result not found"));
 
-				rouletteResultRepository.save(rouletteResult);
+		if (!rouletteResult.getGameSession().getUser().getId().equals(userId)) {
+			throw new IllegalStateException("User is not authorized to settle this game");
+		}
 
-				GameSession gameSession = rouletteResult.getGameSession();
-				gameSession.setWinAmount(result.getTotalPayout());
-				gameSession.setIsResolved(true);
-				gameSession.setResolvedAt(LocalDateTime.now());
-				gameSessionRepository.save(gameSession);
+		rouletteResult.setServerSeed(serverSeed);
+		rouletteResult.setWinningNumber(result.getWinningNumber());
+		rouletteResult.setTotalPayout(result.getTotalPayout().multiply(BigDecimal.TEN.pow(18)).toBigInteger());
+		rouletteResult.setSettled(true);
 
-				serverSeedStorage.remove(gameId);
+		rouletteResultRepository.save(rouletteResult);
 
-				return RouletteGameSettledResponse.builder()
-					.gameId(gameId)
-					.winningNumber(result.getWinningNumber())
-					.totalPayout(result.getTotalPayout())
-					.serverSeed(serverSeed)
-					.timestamp(LocalDateTime.now())
-					.build();
-			}
-			catch (Exception e) {
-				log.error("Error settling roulette game", e);
-				throw new RuntimeException("Error settling roulette game", e);
-			}
-		});
+		GameSession gameSession = rouletteResult.getGameSession();
+		gameSession.setWinAmount(result.getTotalPayout());
+		gameSession.setIsResolved(true);
+		gameSession.setResolvedAt(LocalDateTime.now());
+		gameSessionRepository.save(gameSession);
+
+		serverSeedStorage.remove(gameId);
+
+		return RouletteGameSettledResponse.builder()
+			.gameId(gameId)
+			.winningNumber(result.getWinningNumber())
+			.totalPayout(result.getTotalPayout())
+			.serverSeed(serverSeed)
+			.timestamp(LocalDateTime.now())
+			.build();
 	}
 
 	public RouletteConfigResponse getRouletteConfig() {
@@ -212,6 +202,10 @@ public class RouletteService {
 		RouletteResult rouletteResult = rouletteResultRepository.findByGameSessionId(gameId)
 			.orElseThrow(() -> new ResourceNotFoundException("Roulette game not found"));
 
+		if (!rouletteResult.getGameSession().getUser().getId().equals(userId)) {
+			throw new IllegalStateException("User is not authorized to view this game");
+		}
+
 		List<BetStatusResponse> betsStatus = rouletteResult.getBets()
 			.stream()
 			.map(bet -> BetStatusResponse.builder()
@@ -235,67 +229,63 @@ public class RouletteService {
 			.build();
 	}
 
-	private CompletableFuture<Long> createGameOnBlockchain(String userAddress, List<BetRequest> bets,
-			String serverSeedHash, String clientSeedHex) {
-		return CompletableFuture.supplyAsync(() -> {
-			try {
-				List<Roulette.Bet> contractBets = bets.stream().map(betReq -> {
-					BigInteger betAmountWei = betReq.getAmount().multiply(BigDecimal.TEN.pow(18)).toBigInteger();
-					BigInteger betTypeValue = BigInteger.valueOf(betReq.getBetType().ordinal());
-					BigInteger number = BigInteger.valueOf(betReq.getNumber());
+	private Long createGameOnBlockchain(String userAddress, List<BetRequest> bets, String serverSeedHash,
+			String clientSeedHex) {
+		try {
+			List<Roulette.Bet> contractBets = bets.stream().map(betReq -> {
+				BigInteger betAmountWei = betReq.getAmount().multiply(BigDecimal.TEN.pow(18)).toBigInteger();
+				BigInteger betTypeValue = BigInteger.valueOf(betReq.getBetType().ordinal());
+				BigInteger number = BigInteger.valueOf(betReq.getNumber());
 
-					return new Roulette.Bet(betTypeValue, betAmountWei, number);
-				}).collect(Collectors.toList());
+				return new Roulette.Bet(betTypeValue, betAmountWei, number);
+			}).collect(Collectors.toList());
 
-				byte[] serverSeedHashBytes = Numeric.hexStringToByteArray(serverSeedHash);
-				byte[] clientSeedBytes = Numeric.hexStringToByteArray(clientSeedHex);
+			byte[] serverSeedHashBytes = Numeric.hexStringToByteArray(serverSeedHash);
+			byte[] clientSeedBytes = Numeric.hexStringToByteArray(clientSeedHex);
 
-				TransactionReceipt receipt = roulette
-					.createGame(userAddress, serverSeedHashBytes, contractBets, clientSeedBytes)
-					.send();
+			TransactionReceipt receipt = roulette
+				.createGame(userAddress, serverSeedHashBytes, contractBets, clientSeedBytes)
+				.send();
 
-				var events = Roulette.getGameCreatedEvents(receipt);
-				if (events.isEmpty()) {
-					throw new RuntimeException("No GameCreated event found in transaction");
-				}
-
-				return events.getFirst().gameId.longValue();
+			var events = Roulette.getGameCreatedEvents(receipt);
+			if (events.isEmpty()) {
+				throw new RuntimeException("No GameCreated event found in transaction");
 			}
-			catch (Exception e) {
-				log.error("Error creating roulette game on blockchain", e);
-				throw new RuntimeException("Failed to create roulette game on blockchain", e);
-			}
-		});
+
+			return events.getFirst().gameId.longValue();
+		}
+		catch (Exception e) {
+			log.error("Error creating roulette game on blockchain", e);
+			throw new RuntimeException("Failed to create roulette game on blockchain", e);
+		}
 	}
 
-	private CompletableFuture<RouletteSettleResultData> settleGameOnBlockchain(Long gameId, String serverSeed) {
-		return CompletableFuture.supplyAsync(() -> {
-			try {
-				byte[] serverSeedBytes = Numeric.hexStringToByteArray(serverSeed);
+	private RouletteSettleResultData settleGameOnBlockchain(Long gameId, String serverSeed) {
+		try {
+			byte[] serverSeedBytes = Numeric.hexStringToByteArray(serverSeed);
 
-				TransactionReceipt receipt = roulette.settleGame(BigInteger.valueOf(gameId), serverSeedBytes).send();
+			TransactionReceipt receipt = roulette.settleGame(BigInteger.valueOf(gameId), serverSeedBytes).send();
 
-				var events = Roulette.getGameSettledEvents(receipt);
-				if (events.isEmpty()) {
-					throw new RuntimeException("No GameSettled event found in transaction");
-				}
-
-				var event = events.getFirst();
-
-				BigDecimal totalPayout = new BigDecimal(event.totalPayout).divide(BigDecimal.TEN.pow(18),
-						RoundingMode.DOWN);
-
-				return RouletteSettleResultData.builder()
-					.gameSessionId(gameId)
-					.winningNumber(event.winningNumber.intValue())
-					.totalPayout(totalPayout)
-					.build();
+			var events = Roulette.getGameSettledEvents(receipt);
+			if (events.isEmpty()) {
+				throw new RuntimeException("No GameSettled event found in transaction");
 			}
-			catch (Exception e) {
-				log.error("Error settling roulette game on blockchain", e);
-				throw new RuntimeException("Failed to settle roulette game on blockchain", e);
-			}
-		});
+
+			var event = events.getFirst();
+
+			BigDecimal totalPayout = new BigDecimal(event.totalPayout).divide(BigDecimal.TEN.pow(18),
+					RoundingMode.DOWN);
+
+			return RouletteSettleResultData.builder()
+				.gameSessionId(gameId)
+				.winningNumber(event.winningNumber.intValue())
+				.totalPayout(totalPayout)
+				.build();
+		}
+		catch (Exception e) {
+			log.error("Error settling roulette game on blockchain", e);
+			throw new RuntimeException("Failed to settle roulette game on blockchain", e);
+		}
 	}
 
 	private String generateServerSeed() {

@@ -25,25 +25,25 @@ public class GameSession {
 	@JoinColumn(name = "user_id", nullable = false)
 	private User user;
 
-	@Column(nullable = false, length = 50)
+	@Column(name = "game_type", nullable = false, length = 50)
 	private String gameType;
 
-	@Column(nullable = false, precision = 38, scale = 18)
+	@Column(name = "bet_amount", nullable = false, precision = 38, scale = 18)
 	private BigDecimal betAmount;
 
-	@Column(nullable = false, precision = 38, scale = 18)
+	@Column(name = "win_amount", nullable = false, precision = 38, scale = 18)
 	private BigDecimal winAmount;
 
-	@Column(nullable = false)
+	@Column(name = "is_resolved", nullable = false)
 	private Boolean isResolved;
 
-	@Column(length = 66)
+	@Column(name = "blockchain_tx_hash", length = 66)
 	private String blockchainTxHash;
 
-	@Column(nullable = false)
+	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
-	@Column
+	@Column(name = "resolved_at")
 	private LocalDateTime resolvedAt;
 
 	@PrePersist

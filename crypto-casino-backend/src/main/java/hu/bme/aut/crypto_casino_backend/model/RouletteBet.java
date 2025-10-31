@@ -24,7 +24,7 @@ public class RouletteBet {
 	@JoinColumn(name = "roulette_result_id", nullable = false)
 	private RouletteResult rouletteResult;
 
-	@Column(nullable = false)
+	@Column(name = "bet_type", nullable = false)
 	@Enumerated(EnumType.STRING)
 	private BetType betType;
 

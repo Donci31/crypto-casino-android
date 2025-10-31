@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -22,30 +21,32 @@ public class RouletteController {
 	private final RouletteService rouletteService;
 
 	@PostMapping("/create")
-	public CompletableFuture<ResponseEntity<RouletteService.RouletteGameCreatedResponse>> createGame(
+	public ResponseEntity<RouletteService.RouletteGameCreatedResponse> createGame(
 			@AuthenticationPrincipal UserPrincipal currentUser, @Valid @RequestBody RouletteGameRequest request) {
 		log.info("Roulette game creation request from user: {}, bets count: {}", currentUser.getUsername(),
 				request.bets().size());
 
-		return rouletteService.createGame(currentUser.getId(), request.bets(), request.clientSeed())
-			.thenApply(response -> {
-				log.info("Roulette game created for user {}: gameId={}, serverSeedHash={}", currentUser.getUsername(),
-						response.getGameId(), response.getServerSeedHash());
-				return ResponseEntity.ok(response);
-			});
+		RouletteService.RouletteGameCreatedResponse response = rouletteService.createGame(currentUser.getId(),
+				request.bets(), request.clientSeed());
+
+		log.info("Roulette game created for user {}: gameId={}, serverSeedHash={}", currentUser.getUsername(),
+				response.getGameId(), response.getServerSeedHash());
+
+		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/settle/{gameId}")
-	public CompletableFuture<ResponseEntity<RouletteService.RouletteGameSettledResponse>> settleGame(
+	public ResponseEntity<RouletteService.RouletteGameSettledResponse> settleGame(
 			@AuthenticationPrincipal UserPrincipal currentUser, @PathVariable Long gameId) {
 		log.info("Roulette game settlement request from user: {}, gameId: {}", currentUser.getUsername(), gameId);
 
-		return rouletteService.settleGame(currentUser.getId(), gameId).thenApply(response -> {
-			log.info("Roulette game settled for user {}: gameId={}, winningNumber={}, totalPayout={}",
-					currentUser.getUsername(), response.getGameId(), response.getWinningNumber(),
-					response.getTotalPayout());
-			return ResponseEntity.ok(response);
-		});
+		RouletteService.RouletteGameSettledResponse response = rouletteService.settleGame(currentUser.getId(), gameId);
+
+		log.info("Roulette game settled for user {}: gameId={}, winningNumber={}, totalPayout={}",
+				currentUser.getUsername(), response.getGameId(), response.getWinningNumber(),
+				response.getTotalPayout());
+
+		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/status/{gameId}")

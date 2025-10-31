@@ -26,7 +26,6 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +53,7 @@ public class DiceService {
 	private final Map<Long, String> serverSeedStorage = new HashMap<>();
 
 	@Transactional
-	public CompletableFuture<DiceGameCreatedResponse> createGame(Long userId, BigDecimal betAmount, Integer prediction,
+	public DiceGameCreatedResponse createGame(Long userId, BigDecimal betAmount, Integer prediction,
 			DiceResult.BetType betType, String clientSeedHex) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -81,42 +80,35 @@ public class DiceService {
 
 		GameSession savedSession = gameSessionRepository.save(gameSession);
 
-		return createGameOnBlockchain(walletAddress, betAmount, prediction, betType, serverSeedHash,
-				validatedClientSeed)
-			.thenApply(gameId -> {
-				try {
-					serverSeedStorage.put(gameId, serverSeed);
+		Long gameId = createGameOnBlockchain(walletAddress, betAmount, prediction, betType, serverSeedHash,
+				validatedClientSeed);
 
-					DiceResult diceResult = DiceResult.builder()
-						.gameSession(savedSession)
-						.gameId(BigInteger.valueOf(gameId))
-						.prediction(prediction)
-						.betType(betType)
-						.serverSeedHash(serverSeedHash)
-						.clientSeed(validatedClientSeed)
-						.settled(false)
-						.build();
+		serverSeedStorage.put(gameId, serverSeed);
 
-					diceResultRepository.save(diceResult);
+		DiceResult diceResult = DiceResult.builder()
+			.gameSession(savedSession)
+			.gameId(BigInteger.valueOf(gameId))
+			.prediction(prediction)
+			.betType(betType)
+			.serverSeedHash(serverSeedHash)
+			.clientSeed(validatedClientSeed)
+			.settled(false)
+			.build();
 
-					return DiceGameCreatedResponse.builder()
-						.gameId(gameId)
-						.serverSeedHash(serverSeedHash)
-						.prediction(prediction)
-						.betType(betType)
-						.betAmount(betAmount)
-						.timestamp(LocalDateTime.now())
-						.build();
-				}
-				catch (Exception e) {
-					log.error("Error saving dice game", e);
-					throw new RuntimeException("Error saving dice game", e);
-				}
-			});
+		diceResultRepository.save(diceResult);
+
+		return DiceGameCreatedResponse.builder()
+			.gameId(gameId)
+			.serverSeedHash(serverSeedHash)
+			.prediction(prediction)
+			.betType(betType)
+			.betAmount(betAmount)
+			.timestamp(LocalDateTime.now())
+			.build();
 	}
 
 	@Transactional
-	public CompletableFuture<DiceGameSettledResponse> settleGame(Long userId, Long gameId) {
+	public DiceGameSettledResponse settleGame(Long userId, Long gameId) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
@@ -125,40 +117,38 @@ public class DiceService {
 			throw new IllegalStateException("Server seed not found for game: " + gameId);
 		}
 
-		return settleGameOnBlockchain(gameId, serverSeed).thenApply(result -> {
-			try {
-				DiceResult diceResult = diceResultRepository.findByGameSessionId(result.getGameSessionId())
-					.orElseThrow(() -> new ResourceNotFoundException("Dice result not found"));
+		DiceSettleResultData result = settleGameOnBlockchain(gameId, serverSeed);
 
-				diceResult.setServerSeed(serverSeed);
-				diceResult.setResult(result.getResult());
-				diceResult.setPayout(result.getPayout().multiply(BigDecimal.TEN.pow(18)).toBigInteger());
-				diceResult.setSettled(true);
+		DiceResult diceResult = diceResultRepository.findByGameId(BigInteger.valueOf(gameId))
+			.orElseThrow(() -> new ResourceNotFoundException("Dice result not found"));
 
-				diceResultRepository.save(diceResult);
+		if (!diceResult.getGameSession().getUser().getId().equals(userId)) {
+			throw new IllegalStateException("User is not authorized to settle this game");
+		}
 
-				GameSession gameSession = diceResult.getGameSession();
-				gameSession.setWinAmount(result.getPayout());
-				gameSession.setIsResolved(true);
-				gameSession.setResolvedAt(LocalDateTime.now());
-				gameSessionRepository.save(gameSession);
+		diceResult.setServerSeed(serverSeed);
+		diceResult.setResult(result.getResult());
+		diceResult.setPayout(result.getPayout().multiply(BigDecimal.TEN.pow(18)).toBigInteger());
+		diceResult.setSettled(true);
 
-				serverSeedStorage.remove(gameId);
+		diceResultRepository.save(diceResult);
 
-				return DiceGameSettledResponse.builder()
-					.gameId(gameId)
-					.result(result.getResult())
-					.payout(result.getPayout())
-					.won(result.isWon())
-					.serverSeed(serverSeed)
-					.timestamp(LocalDateTime.now())
-					.build();
-			}
-			catch (Exception e) {
-				log.error("Error settling dice game", e);
-				throw new RuntimeException("Error settling dice game", e);
-			}
-		});
+		GameSession gameSession = diceResult.getGameSession();
+		gameSession.setWinAmount(result.getPayout());
+		gameSession.setIsResolved(true);
+		gameSession.setResolvedAt(LocalDateTime.now());
+		gameSessionRepository.save(gameSession);
+
+		serverSeedStorage.remove(gameId);
+
+		return DiceGameSettledResponse.builder()
+			.gameId(gameId)
+			.result(result.getResult())
+			.payout(result.getPayout())
+			.won(result.isWon())
+			.serverSeed(serverSeed)
+			.timestamp(LocalDateTime.now())
+			.build();
 	}
 
 	public DiceConfigResponse getDiceConfig() {
@@ -197,6 +187,10 @@ public class DiceService {
 		DiceResult diceResult = diceResultRepository.findByGameSessionId(gameId)
 			.orElseThrow(() -> new ResourceNotFoundException("Dice game not found"));
 
+		if (!diceResult.getGameSession().getUser().getId().equals(userId)) {
+			throw new IllegalStateException("User is not authorized to view this game");
+		}
+
 		return DiceGameStatusResponse.builder()
 			.gameId(diceResult.getGameId().longValue())
 			.prediction(diceResult.getPrediction())
@@ -212,67 +206,63 @@ public class DiceService {
 			.build();
 	}
 
-	private CompletableFuture<Long> createGameOnBlockchain(String userAddress, BigDecimal betAmount, Integer prediction,
+	private Long createGameOnBlockchain(String userAddress, BigDecimal betAmount, Integer prediction,
 			DiceResult.BetType betType, String serverSeedHash, String clientSeedHex) {
-		return CompletableFuture.supplyAsync(() -> {
-			try {
-				BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
+		try {
+			BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
 
-				byte[] serverSeedHashBytes = Numeric.hexStringToByteArray(serverSeedHash);
-				byte[] clientSeedBytes = Numeric.hexStringToByteArray(clientSeedHex);
+			byte[] serverSeedHashBytes = Numeric.hexStringToByteArray(serverSeedHash);
+			byte[] clientSeedBytes = Numeric.hexStringToByteArray(clientSeedHex);
 
-				log.debug("Creating game on blockchain - serverSeedHashBytes length: {}, clientSeedBytes length: {}",
-						serverSeedHashBytes.length, clientSeedBytes.length);
+			log.debug("Creating game on blockchain - serverSeedHashBytes length: {}, clientSeedBytes length: {}",
+					serverSeedHashBytes.length, clientSeedBytes.length);
 
-				BigInteger betTypeValue = BigInteger.valueOf(betType.ordinal());
+			BigInteger betTypeValue = BigInteger.valueOf(betType.ordinal());
 
-				TransactionReceipt receipt = dice
-					.createGame(userAddress, serverSeedHashBytes, betAmountWei, BigInteger.valueOf(prediction),
-							betTypeValue, clientSeedBytes)
-					.send();
+			TransactionReceipt receipt = dice
+				.createGame(userAddress, serverSeedHashBytes, betAmountWei, BigInteger.valueOf(prediction),
+						betTypeValue, clientSeedBytes)
+				.send();
 
-				var events = Dice.getGameCreatedEvents(receipt);
-				if (events.isEmpty()) {
-					throw new RuntimeException("No GameCreated event found in transaction");
-				}
-
-				return events.getFirst().gameId.longValue();
+			var events = Dice.getGameCreatedEvents(receipt);
+			if (events.isEmpty()) {
+				throw new RuntimeException("No GameCreated event found in transaction");
 			}
-			catch (Exception e) {
-				log.error("Error creating game on blockchain", e);
-				throw new RuntimeException("Failed to create game on blockchain", e);
-			}
-		});
+
+			return events.getFirst().gameId.longValue();
+		}
+		catch (Exception e) {
+			log.error("Error creating game on blockchain", e);
+			throw new RuntimeException("Failed to create game on blockchain", e);
+		}
 	}
 
-	private CompletableFuture<DiceSettleResultData> settleGameOnBlockchain(Long gameId, String serverSeed) {
-		return CompletableFuture.supplyAsync(() -> {
-			try {
-				byte[] serverSeedBytes = Numeric.hexStringToByteArray(serverSeed);
+	private DiceSettleResultData settleGameOnBlockchain(Long gameId, String serverSeed) {
+		try {
+			byte[] serverSeedBytes = Numeric.hexStringToByteArray(serverSeed);
 
-				TransactionReceipt receipt = dice.settleGame(BigInteger.valueOf(gameId), serverSeedBytes).send();
+			TransactionReceipt receipt = dice.settleGame(BigInteger.valueOf(gameId), serverSeedBytes).send();
 
-				var events = Dice.getGameSettledEvents(receipt);
-				if (events.isEmpty()) {
-					throw new RuntimeException("No GameSettled event found in transaction");
-				}
-
-				var event = events.getFirst();
-
-				BigDecimal payout = new BigDecimal(event.payout).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
-
-				return DiceSettleResultData.builder()
-					.gameSessionId(gameId)
-					.result(event.result.intValue())
-					.payout(payout)
-					.won(event.won)
-					.build();
+			var events = Dice.getGameSettledEvents(receipt);
+			if (events.isEmpty()) {
+				throw new RuntimeException("No GameSettled event found in transaction");
 			}
-			catch (Exception e) {
-				log.error("Error settling game on blockchain", e);
-				throw new RuntimeException("Failed to settle game on blockchain", e);
-			}
-		});
+
+			var event = events.getFirst();
+
+			BigDecimal payout = new BigDecimal(event.payout).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
+
+			return DiceSettleResultData.builder()
+				.gameSessionId(gameId)
+				.result(event.result.intValue())
+				.payout(payout)
+				.won(event.won)
+				.build();
+		}
+		catch (Exception e) {
+			log.error("Error settling game on blockchain", e);
+			throw new RuntimeException("Failed to settle game on blockchain", e);
+		}
 	}
 
 	private String generateServerSeed() {

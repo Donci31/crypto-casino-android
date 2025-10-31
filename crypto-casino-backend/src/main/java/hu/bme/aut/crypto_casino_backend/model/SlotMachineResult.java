@@ -22,16 +22,16 @@ public class SlotMachineResult {
 	@JoinColumn(name = "game_session_id", nullable = false, unique = true)
 	private GameSession gameSession;
 
-	@Column(nullable = false)
+	@Column(name = "reel_1", nullable = false)
 	private Integer reel1;
 
-	@Column(nullable = false)
+	@Column(name = "reel_2", nullable = false)
 	private Integer reel2;
 
-	@Column(nullable = false)
+	@Column(name = "reel_3", nullable = false)
 	private Integer reel3;
 
-	@Column(nullable = false)
+	@Column(name = "spin_id", nullable = false)
 	private Long spinId;
 
 }

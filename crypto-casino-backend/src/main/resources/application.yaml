@@ -19,6 +19,9 @@ spring:
   security:
     filter:
       order: 10
+  threads:
+    virtual:
+      enabled: true
 
 application:
   security:

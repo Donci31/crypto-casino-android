@@ -26,29 +26,29 @@ public class RouletteResult {
 	@JoinColumn(name = "game_session_id", nullable = false, unique = true)
 	private GameSession gameSession;
 
-	@Column(nullable = false)
+	@Column(name = "game_id", nullable = false)
 	private BigInteger gameId;
 
 	@OneToMany(mappedBy = "rouletteResult", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@Builder.Default
 	private List<RouletteBet> bets = new ArrayList<>();
 
-	@Column(nullable = false)
+	@Column(name = "total_bet_amount", nullable = false)
 	private BigInteger totalBetAmount;
 
-	@Column(nullable = false)
+	@Column(name = "server_seed_hash", nullable = false)
 	private String serverSeedHash;
 
-	@Column
+	@Column(name = "server_seed")
 	private String serverSeed;
 
-	@Column(nullable = false)
+	@Column(name = "client_seed", nullable = false)
 	private String clientSeed;
 
-	@Column
+	@Column(name = "winning_number")
 	private Integer winningNumber;
 
-	@Column
+	@Column(name = "total_payout")
 	private BigInteger totalPayout;
 
 	@Column(nullable = false)

@@ -24,23 +24,23 @@ public class DiceResult {
 	@JoinColumn(name = "game_session_id", nullable = false, unique = true)
 	private GameSession gameSession;
 
-	@Column(nullable = false)
+	@Column(name = "game_id", nullable = false)
 	private BigInteger gameId;
 
 	@Column(nullable = false)
 	private Integer prediction;
 
-	@Column(nullable = false)
+	@Column(name = "bet_type", nullable = false)
 	@Enumerated(EnumType.STRING)
 	private BetType betType;
 
-	@Column(nullable = false)
+	@Column(name = "server_seed_hash", nullable = false)
 	private String serverSeedHash;
 
-	@Column
+	@Column(name = "server_seed")
 	private String serverSeed;
 
-	@Column(nullable = false)
+	@Column(name = "client_seed", nullable = false)
 	private String clientSeed;
 
 	@Column

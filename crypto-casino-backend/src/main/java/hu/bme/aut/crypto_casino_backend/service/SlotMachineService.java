@@ -30,7 +30,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,7 +58,7 @@ public class SlotMachineService {
 	private final Web3jConfig web3jConfig;
 
 	@Transactional
-	public CompletableFuture<SpinResponse> executeSpin(Long userId, BigDecimal betAmount) {
+	public SpinResponse executeSpin(Long userId, BigDecimal betAmount) {
 		User user = userRepository.findById(userId)
 			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
@@ -92,106 +91,98 @@ public class SlotMachineService {
 
 		GameSession savedSession = gameSessionRepository.save(gameSession);
 
-		return executeSpinOnBlockchain(walletAddress, betAmount).thenApply(result -> {
-			try {
-				savedSession.setWinAmount(result.getWinAmount());
-				savedSession.setIsResolved(true);
-				savedSession.setResolvedAt(LocalDateTime.now());
+		SpinResultData result = executeSpinOnBlockchain(walletAddress, betAmount);
 
-				GameSession updatedSession = gameSessionRepository.save(savedSession);
+		savedSession.setWinAmount(result.getWinAmount());
+		savedSession.setIsResolved(true);
+		savedSession.setResolvedAt(LocalDateTime.now());
 
-				SlotMachineResult slotResult = SlotMachineResult.builder()
-					.gameSession(updatedSession)
-					.reel1(result.getReels()[0])
-					.reel2(result.getReels()[1])
-					.reel3(result.getReels()[2])
-					.spinId(result.getSpinId())
-					.build();
+		GameSession updatedSession = gameSessionRepository.save(savedSession);
 
-				slotMachineResultRepository.save(slotResult);
+		SlotMachineResult slotResult = SlotMachineResult.builder()
+			.gameSession(updatedSession)
+			.reel1(result.getReels()[0])
+			.reel2(result.getReels()[1])
+			.reel3(result.getReels()[2])
+			.spinId(result.getSpinId())
+			.build();
 
-				BigDecimal newBalance = getVaultBalance(walletAddress);
+		slotMachineResultRepository.save(slotResult);
 
-				return SpinResponse.builder()
-					.spinId(result.getSpinId())
-					.reels(result.getReels())
-					.betAmount(betAmount)
-					.winAmount(result.getWinAmount())
-					.isWin(result.isWin())
-					.timestamp(LocalDateTime.now())
-					.newBalance(newBalance)
-					.build();
-			}
-			catch (Exception e) {
-				log.error("Error processing spin result", e);
-				throw new RuntimeException("Error processing spin result", e);
-			}
-		});
+		BigDecimal newBalance = getVaultBalance(walletAddress);
+
+		return SpinResponse.builder()
+			.spinId(result.getSpinId())
+			.reels(result.getReels())
+			.betAmount(betAmount)
+			.winAmount(result.getWinAmount())
+			.isWin(result.isWin())
+			.timestamp(LocalDateTime.now())
+			.newBalance(newBalance)
+			.build();
 	}
 
-	private CompletableFuture<SpinResultData> executeSpinOnBlockchain(String userAddress, BigDecimal betAmount) {
-		return CompletableFuture.supplyAsync(() -> {
-			try {
-				BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
+	private SpinResultData executeSpinOnBlockchain(String userAddress, BigDecimal betAmount) {
+		try {
+			BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
 
-				TransactionReceipt receipt = slotMachine.spinForPlayer(userAddress, betAmountWei).send();
+			TransactionReceipt receipt = slotMachine.spinForPlayer(userAddress, betAmountWei).send();
 
-				List<SlotMachine.SpinResultEventResponse> results = SlotMachine.getSpinResultEvents(receipt);
-				if (results.isEmpty()) {
-					throw new RuntimeException("No spin result event found in transaction");
-				}
+			List<SlotMachine.SpinResultEventResponse> results = SlotMachine.getSpinResultEvents(receipt);
+			if (results.isEmpty()) {
+				throw new RuntimeException("No spin result event found in transaction");
+			}
 
-				var event = results.getFirst();
+			var event = results.getFirst();
 
-				int[] reels = new int[3];
-				reels[0] = event.reels.get(0).intValue();
-				reels[1] = event.reels.get(1).intValue();
-				reels[2] = event.reels.get(2).intValue();
+			int[] reels = new int[3];
+			reels[0] = event.reels.get(0).intValue();
+			reels[1] = event.reels.get(1).intValue();
+			reels[2] = event.reels.get(2).intValue();
 
-				BigDecimal winAmount = new BigDecimal(event.winAmount).divide(BigDecimal.TEN.pow(18),
-						RoundingMode.DOWN);
+			BigDecimal winAmount = new BigDecimal(event.winAmount).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
 
-				BlockchainTransaction betTx = BlockchainTransaction.builder()
+			BlockchainTransaction betTx = BlockchainTransaction.builder()
+				.txHash(receipt.getTransactionHash())
+				.blockNumber(receipt.getBlockNumber().longValue())
+				.logIndex(event.log.getLogIndex().intValue())
+				.userAddress(userAddress)
+				.eventType(BlockchainTransaction.TransactionType.BET)
+				.amount(betAmount)
+				.gameAddress(web3jConfig.getSlotMachineAddress())
+				.timestamp(LocalDateTime.now())
+				.build();
+
+			blockchainTransactionRepository.save(betTx);
+
+			if (winAmount.compareTo(BigDecimal.ZERO) > 0) {
+				BlockchainTransaction winTx = BlockchainTransaction.builder()
 					.txHash(receipt.getTransactionHash())
 					.blockNumber(receipt.getBlockNumber().longValue())
+					.logIndex(event.log.getLogIndex().intValue())
 					.userAddress(userAddress)
-					.eventType(BlockchainTransaction.TransactionType.BET)
-					.amount(betAmount)
+					.eventType(BlockchainTransaction.TransactionType.WIN)
+					.amount(winAmount)
 					.gameAddress(web3jConfig.getSlotMachineAddress())
 					.timestamp(LocalDateTime.now())
 					.build();
 
-				blockchainTransactionRepository.save(betTx);
-
-				if (winAmount.compareTo(BigDecimal.ZERO) > 0) {
-					BlockchainTransaction winTx = BlockchainTransaction.builder()
-						.txHash(receipt.getTransactionHash())
-						.blockNumber(receipt.getBlockNumber().longValue())
-						.logIndex(event.log.getLogIndex().intValue())
-						.userAddress(userAddress)
-						.eventType(BlockchainTransaction.TransactionType.WIN)
-						.amount(winAmount)
-						.gameAddress(web3jConfig.getSlotMachineAddress())
-						.timestamp(LocalDateTime.now())
-						.build();
-
-					blockchainTransactionRepository.save(winTx);
-				}
-
-				return SpinResultData.builder()
-					.spinId(event.spinId.longValue())
-					.reels(reels)
-					.betAmount(betAmount)
-					.winAmount(winAmount)
-					.isWin(winAmount.compareTo(BigDecimal.ZERO) > 0)
-					.build();
-
+				blockchainTransactionRepository.save(winTx);
 			}
-			catch (Exception e) {
-				log.error("Error executing spin on blockchain", e);
-				throw new RuntimeException("Failed to execute spin on blockchain", e);
-			}
-		});
+
+			return SpinResultData.builder()
+				.spinId(event.spinId.longValue())
+				.reels(reels)
+				.betAmount(betAmount)
+				.winAmount(winAmount)
+				.isWin(winAmount.compareTo(BigDecimal.ZERO) > 0)
+				.build();
+
+		}
+		catch (Exception e) {
+			log.error("Error executing spin on blockchain", e);
+			throw new RuntimeException("Failed to execute spin on blockchain", e);
+		}
 	}
 
 	public BigDecimal getVaultBalance(String walletAddress) {

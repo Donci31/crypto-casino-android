@@ -30,10 +30,10 @@ public class UserWallet {
 	@Column(nullable = false)
 	private String label;
 
-	@Column(nullable = false)
+	@Column(name = "is_primary", nullable = false)
 	private Boolean isPrimary;
 
-	@Column(nullable = false)
+	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
 	@PrePersist

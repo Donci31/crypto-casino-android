@@ -21,33 +21,35 @@ public class BlockchainTransaction {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false, length = 66)
+	@Column(name = "tx_hash", nullable = false, length = 66)
 	private String txHash;
 
+	@Column(name = "block_number")
 	private Long blockNumber;
 
+	@Column(name = "log_index")
 	private Integer logIndex;
 
-	@Column(nullable = false, length = 42)
+	@Column(name = "user_address", nullable = false, length = 42)
 	private String userAddress;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Column(name = "event_type", nullable = false)
 	private TransactionType eventType;
 
 	@Column(nullable = false, precision = 38, scale = 18)
 	private BigDecimal amount;
 
-	@Column(precision = 38, scale = 18)
+	@Column(name = "new_balance", precision = 38, scale = 18)
 	private BigDecimal newBalance;
 
-	@Column(length = 42)
+	@Column(name = "game_address", length = 42)
 	private String gameAddress;
 
 	@Column(nullable = false)
 	private LocalDateTime timestamp;
 
-	@Column(nullable = false)
+	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
 	@PrePersist

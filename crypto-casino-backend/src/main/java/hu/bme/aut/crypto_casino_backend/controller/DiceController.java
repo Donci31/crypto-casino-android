@@ -11,7 +11,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -22,31 +21,31 @@ public class DiceController {
 	private final DiceService diceService;
 
 	@PostMapping("/create")
-	public CompletableFuture<ResponseEntity<DiceService.DiceGameCreatedResponse>> createGame(
+	public ResponseEntity<DiceService.DiceGameCreatedResponse> createGame(
 			@AuthenticationPrincipal UserPrincipal currentUser, @Valid @RequestBody DiceGameRequest request) {
 		log.info("Dice game creation request from user: {}, bet: {}, prediction: {}, betType: {}",
 				currentUser.getUsername(), request.betAmount(), request.prediction(), request.betType());
 
-		return diceService
-			.createGame(currentUser.getId(), request.betAmount(), request.prediction(), request.betType(),
-					request.clientSeed())
-			.thenApply(response -> {
-				log.info("Dice game created for user {}: gameId={}, serverSeedHash={}", currentUser.getUsername(),
-						response.getGameId(), response.getServerSeedHash());
-				return ResponseEntity.ok(response);
-			});
+		DiceService.DiceGameCreatedResponse response = diceService.createGame(currentUser.getId(), request.betAmount(),
+				request.prediction(), request.betType(), request.clientSeed());
+
+		log.info("Dice game created for user {}: gameId={}, serverSeedHash={}", currentUser.getUsername(),
+				response.getGameId(), response.getServerSeedHash());
+
+		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/settle/{gameId}")
-	public CompletableFuture<ResponseEntity<DiceService.DiceGameSettledResponse>> settleGame(
+	public ResponseEntity<DiceService.DiceGameSettledResponse> settleGame(
 			@AuthenticationPrincipal UserPrincipal currentUser, @PathVariable Long gameId) {
 		log.info("Dice game settlement request from user: {}, gameId: {}", currentUser.getUsername(), gameId);
 
-		return diceService.settleGame(currentUser.getId(), gameId).thenApply(response -> {
-			log.info("Dice game settled for user {}: gameId={}, result={}, won={}", currentUser.getUsername(),
-					response.getGameId(), response.getResult(), response.isWon());
-			return ResponseEntity.ok(response);
-		});
+		DiceService.DiceGameSettledResponse response = diceService.settleGame(currentUser.getId(), gameId);
+
+		log.info("Dice game settled for user {}: gameId={}, result={}, won={}", currentUser.getUsername(),
+				response.getGameId(), response.getResult(), response.isWon());
+
+		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/status/{gameId}")

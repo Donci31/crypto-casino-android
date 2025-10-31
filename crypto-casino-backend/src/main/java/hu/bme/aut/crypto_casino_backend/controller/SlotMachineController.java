@@ -9,7 +9,6 @@ import hu.bme.aut.crypto_casino_backend.service.SlotMachineService;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -26,14 +25,16 @@ public class SlotMachineController {
 	private final SlotMachineService slotMachineService;
 
 	@PostMapping("/spin")
-	public CompletableFuture<ResponseEntity<SpinResponse>> spin(@AuthenticationPrincipal UserPrincipal currentUser,
+	public ResponseEntity<SpinResponse> spin(@AuthenticationPrincipal UserPrincipal currentUser,
 			@Valid @RequestBody SpinRequest request) {
 		log.info("Spin request from user: {}, bet: {}", currentUser.getUsername(), request.getBetAmount());
-		return slotMachineService.executeSpin(currentUser.getId(), request.getBetAmount()).thenApply(response -> {
-			log.info("Spin result for user {}: reels={}, win={}", currentUser.getUsername(), response.getReels(),
-					response.getWinAmount());
-			return ResponseEntity.ok(response);
-		});
+
+		SpinResponse response = slotMachineService.executeSpin(currentUser.getId(), request.getBetAmount());
+
+		log.info("Spin result for user {}: reels={}, win={}", currentUser.getUsername(), response.getReels(),
+				response.getWinAmount());
+
+		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/config")

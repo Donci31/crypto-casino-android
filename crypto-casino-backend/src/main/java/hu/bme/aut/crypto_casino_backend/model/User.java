@@ -29,7 +29,7 @@ public class User {
 	@Column(nullable = false, unique = true)
 	private String email;
 
-	@Column(nullable = false)
+	@Column(name = "password_hash", nullable = false)
 	private String passwordHash;
 
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
