@@ -334,3 +334,104 @@ databaseChangeLog:
                   defaultValueBoolean: false
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: 007-create-roulette-result-table
+      author: crypto-casino
+      changes:
+        - createTable:
+            tableName: roulette_result
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: game_session_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_roulette_result_game_session
+                    references: game_session(id)
+              - column:
+                  name: game_id
+                  type: numeric(78, 0)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_bet_amount
+                  type: numeric(78, 0)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: server_seed_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: server_seed
+                  type: varchar(255)
+              - column:
+                  name: client_seed
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: winning_number
+                  type: integer
+              - column:
+                  name: total_payout
+                  type: numeric(78, 0)
+              - column:
+                  name: settled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 008-create-roulette-bet-table
+      author: crypto-casino
+      changes:
+        - createTable:
+            tableName: roulette_bet
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: roulette_result_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_roulette_bet_result
+                    references: roulette_result(id)
+              - column:
+                  name: bet_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: numeric(78, 0)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: number
+                  type: integer
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_roulette_bet_result_id
+            tableName: roulette_bet
+            columns:
+              - column:
+                  name: roulette_result_id

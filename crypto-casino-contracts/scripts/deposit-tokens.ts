@@ -9,7 +9,7 @@ async function main() {
 
   const { viem } = await network.connect();
   const publicClient = await viem.getPublicClient();
-  const [deployer, testUser] = await viem.getWalletClients();
+  const [, testUser] = await viem.getWalletClients();
 
   console.log(`Using test user: ${testUser.account.address}\n`);
 
@@ -26,7 +26,7 @@ async function main() {
   console.log("Step 1: Purchasing tokens with ETH...");
   console.log("   Buying 1000 CST (costs 1 ETH)\n");
 
-  const purchaseHash = await casinoToken.write.purchaseTokens({
+  const purchaseHash = await casinoToken.write.purchaseTokens([], {
     value: parseEther("1"),
     account: testUser.account,
   });
@@ -39,7 +39,7 @@ async function main() {
   console.log("Step 2: Checking token balance...");
   const tokenBalance = await casinoToken.read.balanceOf([
     testUser.account.address,
-  ]);
+  ]) as bigint;
 
   console.log(`   💰 Token Balance: ${formatEther(tokenBalance)} CST\n`);
 
@@ -73,12 +73,16 @@ async function main() {
   console.log("Step 5: Checking vault balance...");
   const vaultBalance = await casinoVault.read.getBalance([
     testUser.account.address,
-  ]);
+  ]) as bigint;
 
   console.log(`   🏦 Vault Balance: ${formatEther(vaultBalance)} CST\n`);
 
+  const updatedTokenBalance = await casinoToken.read.balanceOf([
+    testUser.account.address,
+  ]) as bigint;
+
   console.log("✨ Setup complete! You can now play dice games.");
-  console.log(`   💰 Wallet Balance: ${formatEther(tokenBalance)} CST`);
+  console.log(`   💰 Wallet Balance: ${formatEther(updatedTokenBalance)} CST`);
   console.log(`   🏦 Vault Balance: ${formatEther(vaultBalance)} CST`);
 }
 

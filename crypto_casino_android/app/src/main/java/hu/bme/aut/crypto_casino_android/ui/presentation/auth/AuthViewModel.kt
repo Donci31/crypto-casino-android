@@ -22,8 +22,8 @@ class AuthViewModel @Inject constructor(
     private val _loginState = MutableStateFlow<ApiResult<AuthResponse>?>(null)
     val loginState: StateFlow<ApiResult<AuthResponse>?> = _loginState
 
-    private val _registerState = MutableStateFlow<ApiResult<Boolean>?>(null)
-    val registerState: StateFlow<ApiResult<Boolean>?> = _registerState
+    private val _registerState = MutableStateFlow<ApiResult<AuthResponse>?>(null)
+    val registerState: StateFlow<ApiResult<AuthResponse>?> = _registerState
 
     fun login(username: String, password: String) {
         viewModelScope.launch {
@@ -43,15 +43,8 @@ class AuthViewModel @Inject constructor(
                 password = password
             )
             authRepository.register(userRegistration)
-                .catch { error ->
-                    _registerState.value = ApiResult.Error(error)
-                }
                 .collect { result ->
-                    when (result) {
-                        is ApiResult.Success -> _registerState.value = ApiResult.Success(true)
-                        is ApiResult.Error -> _registerState.value = result
-                        ApiResult.Loading -> _registerState.value = ApiResult.Loading
-                    }
+                    _registerState.value = result
                 }
         }
     }

@@ -23,8 +23,32 @@ class AuthRepository @Inject constructor(
     private val authApi: AuthApi,
     private val tokenManager: TokenManager
 ) {
-    fun register(userRegistration: UserRegistration): Flow<ApiResult<User>> =
-        safeApiFlow { authApi.register(userRegistration) }
+    fun register(userRegistration: UserRegistration): Flow<ApiResult<AuthResponse>> = flow {
+        Log.d(TAG, "Registration attempt for: ${userRegistration.username}")
+        val response = authApi.register(userRegistration)
+        if (response.isSuccessful) {
+            response.body()?.let {
+                Log.d(TAG, "Registration successful, saving tokens")
+                tokenManager.saveTokens(it.token, it.refreshToken)
+                emit(ApiResult.Success(it))
+            } ?: run {
+                Log.e(TAG, "Registration response body is empty")
+                emit(ApiResult.Error(Exception("Empty response body")))
+            }
+        } else {
+            Log.e(TAG, "Registration failed: ${response.code()}")
+            emit(ApiResult.Error(Exception("Registration failed: ${response.code()}")))
+        }
+    }.onStart {
+        emit(ApiResult.Loading)
+    }.catch { e ->
+        Log.e(TAG, "Registration exception: ${e.message}", e)
+        if (e is SocketTimeoutException) {
+            emit(ApiResult.Error(Exception("Connection timed out")))
+        } else {
+            emit(ApiResult.Error(e))
+        }
+    }
 
     fun login(userLogin: UserLogin): Flow<ApiResult<AuthResponse>> = flow {
         Log.d(TAG, "Login attempt for: ${userLogin.usernameOrEmail}")

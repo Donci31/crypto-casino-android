@@ -8,6 +8,8 @@ import dagger.hilt.components.SingletonComponent
 import hu.bme.aut.crypto_casino_android.BuildConfig
 import hu.bme.aut.crypto_casino_android.data.api.AuthApi
 import hu.bme.aut.crypto_casino_android.data.api.BlockchainTransactionApi
+import hu.bme.aut.crypto_casino_android.data.api.DiceApiService
+import hu.bme.aut.crypto_casino_android.data.api.RouletteApiService
 import hu.bme.aut.crypto_casino_android.data.api.SlotMachineApiService
 import hu.bme.aut.crypto_casino_android.data.api.UserApi
 import hu.bme.aut.crypto_casino_android.data.api.WalletApi
@@ -121,5 +123,17 @@ object NetworkModule {
     @Singleton
     fun provideWalletApiService(retrofit: Retrofit): WalletApi {
         return retrofit.create(WalletApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDiceApiService(retrofit: Retrofit): DiceApiService {
+        return retrofit.create(DiceApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRouletteApiService(retrofit: Retrofit): RouletteApiService {
+        return retrofit.create(RouletteApiService::class.java)
     }
 }

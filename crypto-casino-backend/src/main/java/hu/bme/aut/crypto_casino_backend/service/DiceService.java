@@ -45,6 +45,8 @@ public class DiceService {
 
 	private final Dice dice;
 
+	private final org.web3j.casinovault.CasinoVault casinoVault;
+
 	private final Web3jConfig web3jConfig;
 
 	private final SecureRandom secureRandom = new SecureRandom();
@@ -64,6 +66,8 @@ public class DiceService {
 
 		validateBetParameters(betAmount, prediction, betType);
 
+		String validatedClientSeed = validateAndNormalizeClientSeed(clientSeedHex);
+
 		String serverSeed = generateServerSeed();
 		String serverSeedHash = calculateSeedHash(serverSeed);
 
@@ -77,7 +81,8 @@ public class DiceService {
 
 		GameSession savedSession = gameSessionRepository.save(gameSession);
 
-		return createGameOnBlockchain(walletAddress, betAmount, prediction, betType, serverSeedHash, clientSeedHex)
+		return createGameOnBlockchain(walletAddress, betAmount, prediction, betType, serverSeedHash,
+				validatedClientSeed)
 			.thenApply(gameId -> {
 				try {
 					serverSeedStorage.put(gameId, serverSeed);
@@ -88,7 +93,7 @@ public class DiceService {
 						.prediction(prediction)
 						.betType(betType)
 						.serverSeedHash(serverSeedHash)
-						.clientSeed(clientSeedHex)
+						.clientSeed(validatedClientSeed)
 						.settled(false)
 						.build();
 
@@ -176,6 +181,17 @@ public class DiceService {
 		}
 	}
 
+	public BigDecimal getVaultBalance(String walletAddress) {
+		try {
+			BigInteger balance = casinoVault.getBalance(walletAddress).send();
+			return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
+		}
+		catch (Exception e) {
+			log.error("Error getting balance from blockchain", e);
+			throw new RuntimeException("Failed to get balance from blockchain", e);
+		}
+	}
+
 	@Transactional(readOnly = true)
 	public DiceGameStatusResponse getGameStatus(Long userId, Long gameId) {
 		DiceResult diceResult = diceResultRepository.findByGameSessionId(gameId)
@@ -204,6 +220,9 @@ public class DiceService {
 
 				byte[] serverSeedHashBytes = Numeric.hexStringToByteArray(serverSeedHash);
 				byte[] clientSeedBytes = Numeric.hexStringToByteArray(clientSeedHex);
+
+				log.debug("Creating game on blockchain - serverSeedHashBytes length: {}, clientSeedBytes length: {}",
+						serverSeedHashBytes.length, clientSeedBytes.length);
 
 				BigInteger betTypeValue = BigInteger.valueOf(betType.ordinal());
 
@@ -292,6 +311,25 @@ public class DiceService {
 				throw new IllegalArgumentException("Prediction for ROLL_UNDER/ROLL_OVER must be between 2 and 99");
 			}
 		}
+	}
+
+	private String validateAndNormalizeClientSeed(String clientSeedHex) {
+		if (clientSeedHex == null || clientSeedHex.trim().isEmpty()) {
+			return generateServerSeed();
+		}
+
+		String normalizedSeed = clientSeedHex.trim();
+		if (!normalizedSeed.startsWith("0x")) {
+			normalizedSeed = "0x" + normalizedSeed;
+		}
+
+		byte[] seedBytes = Numeric.hexStringToByteArray(normalizedSeed);
+		if (seedBytes.length != 32) {
+			throw new IllegalArgumentException("Client seed must be exactly 32 bytes (64 hex characters). Provided: "
+					+ seedBytes.length + " bytes");
+		}
+
+		return normalizedSeed;
 	}
 
 	@lombok.Data

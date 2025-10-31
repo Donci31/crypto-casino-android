@@ -33,13 +33,14 @@ public class User {
 	private String passwordHash;
 
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<UserWallet> wallets = new ArrayList<>();
+	private List<UserWallet> wallets;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
 
 	@PrePersist
 	protected void onCreate() {
+		wallets = new ArrayList<>();
 		createdAt = LocalDateTime.now();
 	}
 

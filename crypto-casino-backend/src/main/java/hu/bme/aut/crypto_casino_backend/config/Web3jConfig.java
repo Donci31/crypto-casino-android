@@ -1,6 +1,7 @@
 package hu.bme.aut.crypto_casino_backend.config;
 
 import java.math.BigInteger;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,6 +16,7 @@ import org.web3j.dice.Dice;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.protocol.websocket.WebSocketService;
+import org.web3j.roulette.Roulette;
 import org.web3j.slotmachine.SlotMachine;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
@@ -47,6 +49,9 @@ public class Web3jConfig {
 
 	@Value("${web3j.contract.dice}")
 	private String diceAddress;
+
+	@Value("${web3j.contract.roulette}")
+	private String rouletteAddress;
 
 	@Value("${wallet.master-wallet.private-key}")
 	private String masterWalletPrivateKey;
@@ -106,6 +111,15 @@ public class Web3jConfig {
 		log.info("Loading Dice contract at address: {}", diceAddress);
 
 		return Dice.load(diceAddress, web3j, masterWalletCredentials, gasProvider);
+	}
+
+	@Bean
+	public Roulette rouletteContract(@Qualifier("httpWeb3j") Web3j web3j, Credentials masterWalletCredentials,
+			ContractGasProvider gasProvider) {
+
+		log.info("Loading Roulette contract at address: {}", rouletteAddress);
+
+		return Roulette.load(rouletteAddress, web3j, masterWalletCredentials, gasProvider);
 	}
 
 }

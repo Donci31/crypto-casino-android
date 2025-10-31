@@ -25,11 +25,11 @@ public class AuthController {
 	private final AuthService authService;
 
 	@PostMapping("/register")
-	public ResponseEntity<UserDto> register(@Valid @RequestBody UserRegistrationDto registrationDto) {
+	public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody UserRegistrationDto registrationDto) {
 		log.info("Registration request for username: {}", registrationDto.getUsername());
-		UserDto registeredUser = authService.registerUser(registrationDto);
-		log.info("User registered successfully: {}", registeredUser.getUsername());
-		return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
+		AuthResponseDto authResponse = authService.registerUser(registrationDto);
+		log.info("User registered successfully: {}", authResponse.getUser().getUsername());
+		return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
 	}
 
 	@PostMapping("/login")

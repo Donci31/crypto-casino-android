@@ -1,4 +1,4 @@
-package hu.bme.aut.crypto_casino_android.ui.presentation.home
+package hu.bme.aut.crypto_casino_android.ui.presentation.games
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,10 +14,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Casino
-import androidx.compose.material.icons.filled.CurrencyExchange
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,10 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import hu.bme.aut.crypto_casino_android.ui.theme.Amber
 import hu.bme.aut.crypto_casino_android.ui.theme.Primary
 import hu.bme.aut.crypto_casino_android.ui.theme.Secondary
@@ -44,17 +39,15 @@ import hu.bme.aut.crypto_casino_android.ui.theme.Tertiary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel(),
-    onNavigateToWallet: () -> Unit = {},
-    onNavigateToGames: () -> Unit = {},
-    onNavigateToTransactions: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+fun GamesMenuScreen(
+    onNavigateToSlotMachine: () -> Unit = {},
+    onNavigateToDice: () -> Unit = {},
+    onNavigateToRoulette: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Crypto Casino") }
+                title = { Text("Games") }
             )
         }
     ) { paddingValues ->
@@ -65,30 +58,39 @@ fun HomeScreen(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Welcome to Crypto Casino",
+                text = "Choose a Game",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
-                text = "Your decentralized casino platform",
+                text = "Select a game to start playing",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
             )
 
-            val items = listOf(
-                HomeItem(
-                    title = "Play Games",
+            val games = listOf(
+                GameItem(
+                    title = "Slot Machine",
+                    description = "Classic 3-reel slots",
                     icon = Icons.Default.Casino,
-                    backgroundColor = Primary,
-                    onClick = onNavigateToGames
+                    backgroundColor = Tertiary,
+                    onClick = onNavigateToSlotMachine
                 ),
-                HomeItem(
-                    title = "Manage Wallet",
-                    icon = Icons.Default.AccountBalanceWallet,
+                GameItem(
+                    title = "Dice",
+                    description = "Roll under or over",
+                    icon = Icons.Default.Casino,
+                    backgroundColor = Secondary,
+                    onClick = onNavigateToDice
+                ),
+                GameItem(
+                    title = "Roulette",
+                    description = "European roulette wheel",
+                    icon = Icons.Default.Casino,
                     backgroundColor = Amber,
-                    onClick = onNavigateToWallet
+                    onClick = onNavigateToRoulette
                 )
             )
 
@@ -97,28 +99,29 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(items) { item ->
-                    HomeItemCard(item)
+                items(games) { game ->
+                    GameCard(game)
                 }
             }
         }
     }
 }
 
-data class HomeItem(
+data class GameItem(
     val title: String,
+    val description: String,
     val icon: ImageVector,
     val backgroundColor: Color,
     val onClick: () -> Unit
 )
 
 @Composable
-fun HomeItemCard(item: HomeItem) {
+fun GameCard(game: GameItem) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp)
-            .clickable { item.onClick() }
+            .height(160.dp)
+            .clickable { game.onClick() }
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -129,30 +132,32 @@ fun HomeItemCard(item: HomeItem) {
                 modifier = Modifier
                     .padding(bottom = 12.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(item.backgroundColor.copy(alpha = 0.8f))
-                    .padding(12.dp),
+                    .background(game.backgroundColor.copy(alpha = 0.8f))
+                    .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = item.icon,
-                    contentDescription = item.title,
+                    imageVector = game.icon,
+                    contentDescription = game.title,
                     tint = MaterialTheme.colorScheme.background,
                     modifier = Modifier.padding(4.dp)
                 )
             }
 
             Text(
-                text = item.title,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
+                text = game.title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
                 textAlign = TextAlign.Center
+            )
+
+            Text(
+                text = game.description,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp)
             )
         }
     }
-}
-
-@Preview
-@Composable
-fun HomeScreenPreview() {
-    HomeScreen()
 }

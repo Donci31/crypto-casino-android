@@ -34,7 +34,7 @@ public class AuthService {
 	private final AuthenticationManager authenticationManager;
 
 	@Transactional
-	public UserDto registerUser(UserRegistrationDto registrationDto) {
+	public AuthResponseDto registerUser(UserRegistrationDto registrationDto) {
 		if (userRepository.existsByUsername(registrationDto.getUsername())) {
 			throw new ResourceAlreadyExistsException("Username already exists");
 		}
@@ -48,7 +48,17 @@ public class AuthService {
 
 		User savedUser = userRepository.save(user);
 
-		return userMapper.toDto(savedUser);
+		UserDetails userDetails = UserPrincipal.create(savedUser);
+
+		String accessToken = jwtService.generateToken(userDetails);
+		String refreshToken = jwtService.generateRefreshToken(userDetails);
+
+		return AuthResponseDto.builder()
+			.token(accessToken)
+			.refreshToken(refreshToken)
+			.tokenType("Bearer")
+			.user(userMapper.toDto(savedUser))
+			.build();
 	}
 
 	public AuthResponseDto login(UserLoginDto loginDto) {

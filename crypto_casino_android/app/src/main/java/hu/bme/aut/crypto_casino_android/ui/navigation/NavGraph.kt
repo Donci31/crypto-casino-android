@@ -25,8 +25,11 @@ import com.google.gson.Gson
 import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
 import hu.bme.aut.crypto_casino_android.ui.presentation.auth.LoginScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.auth.RegisterScreen
+import hu.bme.aut.crypto_casino_android.ui.presentation.dice.DiceScreen
+import hu.bme.aut.crypto_casino_android.ui.presentation.games.GamesMenuScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.home.HomeScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.profile.ProfileScreen
+import hu.bme.aut.crypto_casino_android.ui.presentation.roulette.RouletteScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.slot.SlotMachineScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.transactions.BlockchainTransactionDetailScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.transactions.BlockchainTransactionsScreen
@@ -72,11 +75,22 @@ fun NavGraph(
                 onNavigateToWallet = {
                     navController.navigate(Screen.Wallet.route)
                 },
-                onNavigateToTransactions = {
-                    navController.navigate(Screen.Transactions.route)
-                },
+                onNavigateToGames = {
+                    navController.navigate(Screen.Games.route)
+                }
+            )
+        }
+
+        composable(Screen.Games.route) {
+            GamesMenuScreen(
                 onNavigateToSlotMachine = {
                     navController.navigate(Screen.SlotMachine.route)
+                },
+                onNavigateToDice = {
+                    navController.navigate(Screen.Dice.route)
+                },
+                onNavigateToRoulette = {
+                    navController.navigate(Screen.Roulette.route)
                 }
             )
         }
@@ -154,6 +168,14 @@ fun NavGraph(
                 }
             )
         }
+
+        composable(Screen.Dice.route) {
+            DiceScreen()
+        }
+
+        composable(Screen.Roulette.route) {
+            RouletteScreen()
+        }
     }
 }
 
@@ -162,7 +184,7 @@ fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         NavigationItem.Home,
         NavigationItem.Wallet,
-        NavigationItem.SlotMachine,
+        NavigationItem.Games,
         NavigationItem.Transactions,
         NavigationItem.Profile
     )
@@ -196,7 +218,7 @@ fun BottomNavigationBar(navController: NavController) {
 sealed class NavigationItem(val route: String, val icon: ImageVector, val title: String) {
     object Home : NavigationItem(Screen.Home.route, Icons.Default.Home, "Home")
     object Wallet : NavigationItem(Screen.Wallet.route, Icons.Default.AccountBalanceWallet, "Wallet")
-    object SlotMachine : NavigationItem(Screen.SlotMachine.route, Icons.Default.Casino, "Slots")
-    object Transactions : NavigationItem(Screen.Transactions.route, Icons.AutoMirrored.Filled.List, "Transaction")
+    object Games : NavigationItem(Screen.Games.route, Icons.Default.Casino, "Games")
+    object Transactions : NavigationItem(Screen.Transactions.route, Icons.AutoMirrored.Filled.List, "Transactions")
     object Profile : NavigationItem(Screen.Profile.route, Icons.Default.Person, "Profile")
 }

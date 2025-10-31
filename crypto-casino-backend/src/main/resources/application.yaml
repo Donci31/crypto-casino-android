@@ -38,6 +38,7 @@ web3j:
     casino-vault: ${CONTRACT_CASINO_VAULT}
     slot-machine: ${CONTRACT_SLOT_MACHINE}
     dice: ${CONTRACT_DICE}
+    roulette: ${CONTRACT_ROULETTE}
 
 wallet:
   master-wallet:

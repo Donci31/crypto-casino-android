@@ -63,8 +63,24 @@ public class DiceController {
 		return ResponseEntity.ok(diceService.getDiceConfig());
 	}
 
+	@GetMapping("/balance")
+	public ResponseEntity<BalanceResponse> getBalance(@AuthenticationPrincipal UserPrincipal currentUser) {
+		log.info("Vault balance request for user: {}", currentUser.getUsername());
+		if (currentUser.getPrimaryWalletAddress() == null) {
+			log.warn("User {} has no primary wallet address", currentUser.getUsername());
+			return ResponseEntity.badRequest().build();
+		}
+
+		BigDecimal balance = diceService.getVaultBalance(currentUser.getPrimaryWalletAddress());
+		log.info("Vault balance for user {}: {}", currentUser.getUsername(), balance);
+		return ResponseEntity.ok(new BalanceResponse(balance));
+	}
+
 	public record DiceGameRequest(BigDecimal betAmount, Integer prediction, DiceResult.BetType betType,
 			String clientSeed) {
+	}
+
+	public record BalanceResponse(BigDecimal balance) {
 	}
 
 }

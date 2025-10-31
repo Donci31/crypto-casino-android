@@ -24,6 +24,13 @@ const CasinoModule = buildModule("CasinoModule", (m) => {
     houseEdgePercentage,
   ]);
 
+  const rouletteGame = m.contract("Roulette", [
+    casinoVault,
+    minBetInTokenUnits,
+    maxBetInTokenUnits,
+    houseEdgePercentage,
+  ]);
+
   const authorizeSlotMachine = m.call(
     casinoVault,
     "authorizeGame",
@@ -33,8 +40,11 @@ const CasinoModule = buildModule("CasinoModule", (m) => {
   const authorizeDiceGame = m.call(casinoVault, "authorizeGame", [diceGame], {
     id: "AuthorizeDice",
   });
+  const authorizeRouletteGame = m.call(casinoVault, "authorizeGame", [rouletteGame], {
+    id: "AuthorizeRoulette",
+  });
 
-  return { casinoToken, casinoVault, slotMachine, diceGame };
+  return { casinoToken, casinoVault, slotMachine, diceGame, rouletteGame };
 });
 
 export default CasinoModule;
