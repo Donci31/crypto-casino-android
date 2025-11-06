@@ -5,11 +5,18 @@ import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteBetRequest
 import java.math.BigDecimal
 import java.security.SecureRandom
 
+enum class RouletteGamePhase {
+    IDLE,
+    COMMITTING,
+    COMMITTED_WAITING,
+    REVEALING,
+    VERIFICATION,
+    REVEALED
+}
+
 data class RouletteUiState(
     val isLoading: Boolean = true,
-    val isCreatingGame: Boolean = false,
-    val isSettling: Boolean = false,
-    val isSpinning: Boolean = false,
+    val gamePhase: RouletteGamePhase = RouletteGamePhase.IDLE,
     val minBet: BigDecimal = BigDecimal.ZERO,
     val maxBet: BigDecimal = BigDecimal.ZERO,
     val houseEdge: Int = 0,
@@ -19,11 +26,18 @@ data class RouletteUiState(
     val balance: BigDecimal = BigDecimal.ZERO,
     val currentGameId: Long? = null,
     val serverSeedHash: String? = null,
+    val serverSeed: String? = null,
+    val transactionHash: String? = null,
+    val blockNumber: Long? = null,
     val winningNumber: Int? = null,
     val totalPayout: BigDecimal? = null,
     val error: String? = null,
     val clientSeed: String = generateClientSeed()
-)
+) {
+    val isCreatingGame: Boolean get() = gamePhase == RouletteGamePhase.COMMITTING
+    val isSettling: Boolean get() = gamePhase == RouletteGamePhase.REVEALING
+    val isSpinning: Boolean get() = gamePhase == RouletteGamePhase.REVEALING
+}
 
 private fun generateClientSeed(): String {
     val random = SecureRandom()

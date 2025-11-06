@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.crypto_casino_android.data.model.dice.BetType
 import hu.bme.aut.crypto_casino_android.data.repository.DiceRepository
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -89,7 +90,7 @@ class DiceViewModel @Inject constructor(
     fun playGame() {
         val state = _uiState.value
 
-        if (state.currentGameId != null && !state.isSettling) {
+        if (state.gamePhase != DiceGamePhase.IDLE) {
             return
         }
 
@@ -99,31 +100,34 @@ class DiceViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isCreatingGame = true, error = null, result = null, won = null) }
+            _uiState.update { it.copy(gamePhase = DiceGamePhase.COMMITTING, error = null, result = null, won = null) }
+
+            val paddedSeed = padClientSeed(state.clientSeed)
 
             diceRepository.createGame(
                 betAmount = state.currentBet,
                 prediction = state.prediction,
                 betType = state.betType,
-                clientSeed = state.clientSeed
+                clientSeed = paddedSeed
             ).collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
                         val createdGame = result.data
                         _uiState.update { currentState ->
                             currentState.copy(
-                                isCreatingGame = false,
+                                gamePhase = DiceGamePhase.COMMITTED_WAITING,
                                 currentGameId = createdGame.gameId,
-                                serverSeedHash = createdGame.serverSeedHash
+                                serverSeedHash = createdGame.serverSeedHash,
+                                transactionHash = createdGame.transactionHash,
+                                blockNumber = createdGame.blockNumber
                             )
                         }
-                        settleGame(createdGame.gameId)
                     }
                     is ApiResult.Error -> {
                         _uiState.update {
                             it.copy(
                                 error = "Failed to create game: ${result.exception.message}",
-                                isCreatingGame = false
+                                gamePhase = DiceGamePhase.IDLE
                             )
                         }
                     }
@@ -134,9 +138,16 @@ class DiceViewModel @Inject constructor(
         }
     }
 
+    fun proceedToReveal() {
+        val state = _uiState.value
+        if (state.gamePhase == DiceGamePhase.COMMITTED_WAITING && state.currentGameId != null) {
+            settleGame(state.currentGameId)
+        }
+    }
+
     private fun settleGame(gameId: Long) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isSettling = true) }
+            _uiState.update { it.copy(gamePhase = DiceGamePhase.REVEALING) }
 
             diceRepository.settleGame(gameId).collect { result ->
                 when (result) {
@@ -144,10 +155,11 @@ class DiceViewModel @Inject constructor(
                         val settledGame = result.data
                         _uiState.update { currentState ->
                             currentState.copy(
-                                isSettling = false,
+                                gamePhase = DiceGamePhase.VERIFICATION,
                                 result = settledGame.result,
                                 payout = settledGame.payout,
                                 won = settledGame.won,
+                                serverSeed = settledGame.serverSeed,
                                 currentGameId = null
                             )
                         }
@@ -157,7 +169,7 @@ class DiceViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 error = "Failed to settle game: ${result.exception.message}",
-                                isSettling = false,
+                                gamePhase = DiceGamePhase.IDLE,
                                 currentGameId = null
                             )
                         }
@@ -167,6 +179,10 @@ class DiceViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun continueAfterVerification() {
+        _uiState.update { it.copy(gamePhase = DiceGamePhase.REVEALED) }
     }
 
     private fun loadBalance() {
@@ -186,6 +202,31 @@ class DiceViewModel @Inject constructor(
     }
 
     fun clearResult() {
-        _uiState.update { it.copy(result = null, won = null, payout = null, error = null) }
+        _uiState.update { it.copy(gamePhase = DiceGamePhase.IDLE, result = null, won = null, payout = null, error = null) }
+    }
+
+    fun updateClientSeed(input: String) {
+        val sanitized = input.filter { it.isLetterOrDigit() }
+        _uiState.update { it.copy(clientSeed = sanitized) }
+    }
+
+    fun generateNewClientSeed() {
+        _uiState.update { it.copy(clientSeed = generateClientSeed()) }
+    }
+
+    private fun generateClientSeed(): String {
+        val random = java.security.SecureRandom()
+        val bytes = ByteArray(32)
+        random.nextBytes(bytes)
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun padClientSeed(seed: String): String {
+        val targetLength = 64
+        return if (seed.length >= targetLength) {
+            seed.take(targetLength)
+        } else {
+            seed.padEnd(targetLength, '0')
+        }
     }
 }

@@ -152,7 +152,7 @@ class RouletteViewModel @Inject constructor(
     fun spin() {
         val state = _uiState.value
 
-        if (state.currentGameId != null && !state.isSettling) {
+        if (state.gamePhase != RouletteGamePhase.IDLE) {
             return
         }
 
@@ -167,7 +167,7 @@ class RouletteViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isCreatingGame = true, error = null, winningNumber = null) }
+            _uiState.update { it.copy(gamePhase = RouletteGamePhase.COMMITTING, error = null, winningNumber = null) }
 
             val betRequests = state.placedBets.map { it.toRequest() }
 
@@ -180,20 +180,19 @@ class RouletteViewModel @Inject constructor(
                         val createdGame = result.data
                         _uiState.update { currentState ->
                             currentState.copy(
-                                isCreatingGame = false,
-                                isSpinning = true,
+                                gamePhase = RouletteGamePhase.COMMITTED_WAITING,
                                 currentGameId = createdGame.gameId,
-                                serverSeedHash = createdGame.serverSeedHash
+                                serverSeedHash = createdGame.serverSeedHash,
+                                transactionHash = createdGame.transactionHash,
+                                blockNumber = createdGame.blockNumber
                             )
                         }
-                        delay(2000)
-                        settleGame(createdGame.gameId)
                     }
                     is ApiResult.Error -> {
                         _uiState.update {
                             it.copy(
                                 error = "Failed to create game: ${result.exception.message}",
-                                isCreatingGame = false
+                                gamePhase = RouletteGamePhase.IDLE
                             )
                         }
                     }
@@ -204,9 +203,16 @@ class RouletteViewModel @Inject constructor(
         }
     }
 
+    fun proceedToReveal() {
+        val state = _uiState.value
+        if (state.gamePhase == RouletteGamePhase.COMMITTED_WAITING && state.currentGameId != null) {
+            settleGame(state.currentGameId)
+        }
+    }
+
     private fun settleGame(gameId: Long) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isSettling = true) }
+            _uiState.update { it.copy(gamePhase = RouletteGamePhase.REVEALING) }
 
             rouletteRepository.settleGame(gameId).collect { result ->
                 when (result) {
@@ -214,10 +220,10 @@ class RouletteViewModel @Inject constructor(
                         val settledGame = result.data
                         _uiState.update { currentState ->
                             currentState.copy(
-                                isSettling = false,
-                                isSpinning = false,
+                                gamePhase = RouletteGamePhase.VERIFICATION,
                                 winningNumber = settledGame.winningNumber,
                                 totalPayout = settledGame.totalPayout,
+                                serverSeed = settledGame.serverSeed,
                                 currentGameId = null
                             )
                         }
@@ -227,8 +233,7 @@ class RouletteViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 error = "Failed to settle game: ${result.exception.message}",
-                                isSettling = false,
-                                isSpinning = false,
+                                gamePhase = RouletteGamePhase.IDLE,
                                 currentGameId = null
                             )
                         }
@@ -238,6 +243,10 @@ class RouletteViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun continueAfterVerification() {
+        _uiState.update { it.copy(gamePhase = RouletteGamePhase.REVEALED) }
     }
 
     private fun loadBalance() {
@@ -259,6 +268,7 @@ class RouletteViewModel @Inject constructor(
     fun clearResult() {
         _uiState.update {
             it.copy(
+                gamePhase = RouletteGamePhase.IDLE,
                 winningNumber = null,
                 totalPayout = null,
                 error = null,

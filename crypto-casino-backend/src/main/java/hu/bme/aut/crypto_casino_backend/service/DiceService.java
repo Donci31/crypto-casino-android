@@ -80,9 +80,10 @@ public class DiceService {
 
 		GameSession savedSession = gameSessionRepository.save(gameSession);
 
-		Long gameId = createGameOnBlockchain(walletAddress, betAmount, prediction, betType, serverSeedHash,
-				validatedClientSeed);
+		BlockchainGameCreationResult creationResult = createGameOnBlockchain(walletAddress, betAmount, prediction,
+				betType, serverSeedHash, validatedClientSeed);
 
+		Long gameId = creationResult.getGameId();
 		serverSeedStorage.put(gameId, serverSeed);
 
 		DiceResult diceResult = DiceResult.builder()
@@ -100,6 +101,8 @@ public class DiceService {
 		return DiceGameCreatedResponse.builder()
 			.gameId(gameId)
 			.serverSeedHash(serverSeedHash)
+			.transactionHash(creationResult.getTransactionHash())
+			.blockNumber(creationResult.getBlockNumber())
 			.prediction(prediction)
 			.betType(betType)
 			.betAmount(betAmount)
@@ -206,8 +209,8 @@ public class DiceService {
 			.build();
 	}
 
-	private Long createGameOnBlockchain(String userAddress, BigDecimal betAmount, Integer prediction,
-			DiceResult.BetType betType, String serverSeedHash, String clientSeedHex) {
+	private BlockchainGameCreationResult createGameOnBlockchain(String userAddress, BigDecimal betAmount,
+			Integer prediction, DiceResult.BetType betType, String serverSeedHash, String clientSeedHex) {
 		try {
 			BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
 
@@ -229,7 +232,15 @@ public class DiceService {
 				throw new RuntimeException("No GameCreated event found in transaction");
 			}
 
-			return events.getFirst().gameId.longValue();
+			Long gameId = events.getFirst().gameId.longValue();
+			String transactionHash = receipt.getTransactionHash();
+			Long blockNumber = receipt.getBlockNumber().longValue();
+
+			return BlockchainGameCreationResult.builder()
+				.gameId(gameId)
+				.transactionHash(transactionHash)
+				.blockNumber(blockNumber)
+				.build();
 		}
 		catch (Exception e) {
 			log.error("Error creating game on blockchain", e);
@@ -330,6 +341,10 @@ public class DiceService {
 
 		private String serverSeedHash;
 
+		private String transactionHash;
+
+		private Long blockNumber;
+
 		private Integer prediction;
 
 		private DiceResult.BetType betType;
@@ -407,6 +422,18 @@ public class DiceService {
 		private BigDecimal payout;
 
 		private boolean won;
+
+	}
+
+	@lombok.Data
+	@lombok.Builder
+	private static class BlockchainGameCreationResult {
+
+		private Long gameId;
+
+		private String transactionHash;
+
+		private Long blockNumber;
 
 	}
 

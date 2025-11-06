@@ -6,5 +6,6 @@ data class DiceGameSettledResponse(
     val gameId: Long,
     val result: Int,
     val payout: BigDecimal,
-    val won: Boolean
+    val won: Boolean,
+    val serverSeed: String? = null
 )

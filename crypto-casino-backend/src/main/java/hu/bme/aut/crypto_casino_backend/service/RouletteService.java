@@ -86,8 +86,10 @@ public class RouletteService {
 
 		GameSession savedSession = gameSessionRepository.save(gameSession);
 
-		Long gameId = createGameOnBlockchain(walletAddress, bets, serverSeedHash, clientSeedHex);
+		BlockchainGameCreationResult creationResult = createGameOnBlockchain(walletAddress, bets, serverSeedHash,
+				clientSeedHex);
 
+		Long gameId = creationResult.getGameId();
 		serverSeedStorage.put(gameId, serverSeed);
 
 		RouletteResult rouletteResult = RouletteResult.builder()
@@ -117,6 +119,8 @@ public class RouletteService {
 		return RouletteGameCreatedResponse.builder()
 			.gameId(gameId)
 			.serverSeedHash(serverSeedHash)
+			.transactionHash(creationResult.getTransactionHash())
+			.blockNumber(creationResult.getBlockNumber())
 			.bets(bets)
 			.totalBetAmount(totalBetAmount)
 			.timestamp(LocalDateTime.now())
@@ -229,8 +233,8 @@ public class RouletteService {
 			.build();
 	}
 
-	private Long createGameOnBlockchain(String userAddress, List<BetRequest> bets, String serverSeedHash,
-			String clientSeedHex) {
+	private BlockchainGameCreationResult createGameOnBlockchain(String userAddress, List<BetRequest> bets,
+			String serverSeedHash, String clientSeedHex) {
 		try {
 			List<Roulette.Bet> contractBets = bets.stream().map(betReq -> {
 				BigInteger betAmountWei = betReq.getAmount().multiply(BigDecimal.TEN.pow(18)).toBigInteger();
@@ -252,7 +256,15 @@ public class RouletteService {
 				throw new RuntimeException("No GameCreated event found in transaction");
 			}
 
-			return events.getFirst().gameId.longValue();
+			Long gameId = events.getFirst().gameId.longValue();
+			String transactionHash = receipt.getTransactionHash();
+			Long blockNumber = receipt.getBlockNumber().longValue();
+
+			return BlockchainGameCreationResult.builder()
+				.gameId(gameId)
+				.transactionHash(transactionHash)
+				.blockNumber(blockNumber)
+				.build();
 		}
 		catch (Exception e) {
 			log.error("Error creating roulette game on blockchain", e);
@@ -350,6 +362,10 @@ public class RouletteService {
 
 		private String serverSeedHash;
 
+		private String transactionHash;
+
+		private Long blockNumber;
+
 		private List<BetRequest> bets;
 
 		private BigDecimal totalBetAmount;
@@ -431,6 +447,18 @@ public class RouletteService {
 		private Integer winningNumber;
 
 		private BigDecimal totalPayout;
+
+	}
+
+	@lombok.Data
+	@lombok.Builder
+	private static class BlockchainGameCreationResult {
+
+		private Long gameId;
+
+		private String transactionHash;
+
+		private Long blockNumber;
 
 	}
 
