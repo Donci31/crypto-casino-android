@@ -8,7 +8,6 @@ import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteConfigRespon
 import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteGameCreatedResponse
 import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteGameRequest
 import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteGameSettledResponse
-import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteGameStatusResponse
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
 import hu.bme.aut.crypto_casino_android.data.util.safeApiFlow
 import kotlinx.coroutines.flow.Flow
@@ -40,11 +39,6 @@ class RouletteRepository @Inject constructor(
     fun settleGame(gameId: Long): Flow<ApiResult<RouletteGameSettledResponse>> {
         Log.d(TAG, "Settling roulette game: gameId=$gameId")
         return safeApiFlow { apiService.settleGame(gameId) }
-    }
-
-    fun getGameStatus(gameId: Long): Flow<ApiResult<RouletteGameStatusResponse>> {
-        Log.d(TAG, "Fetching roulette game status: gameId=$gameId")
-        return safeApiFlow { apiService.getGameStatus(gameId) }
     }
 
     fun getBalance(): Flow<ApiResult<RouletteBalanceResponse>> {

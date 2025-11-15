@@ -1,19 +1,18 @@
 package hu.bme.aut.crypto_casino_android.ui.navigation
 
 sealed class Screen(val route: String) {
-    object Login : Screen("login")
-    object Register : Screen("register")
-    object Home : Screen("home")
-    object Games : Screen("games")
-    object Wallet : Screen("wallet")
-    object Transactions : Screen("blockchain-transactions")
-    object TransactionDetail : Screen("blockchain-transaction/{transactionHash}/{blockNumber}/{logIndex}") {
+    data object Login : Screen("login")
+    data object Register : Screen("register")
+    data object Home : Screen("home")
+    data object Games : Screen("games")
+    data object Wallet : Screen("wallet")
+    data object Transactions : Screen("blockchain-transactions")
+    data object TransactionDetail : Screen("blockchain-transaction/{transactionHash}/{blockNumber}/{logIndex}") {
         fun createRoute(transactionHash: String, blockNumber: Long, logIndex: Int): String =
             "blockchain-transaction/$transactionHash/$blockNumber/$logIndex"
     }
-    object Profile : Screen("profile")
-    object SlotMachine : Screen("slot-machine")
-    object Dice : Screen("dice")
-    object Roulette : Screen("roulette")
-    object GameHistory : Screen("game-history")
+    data object Profile : Screen("profile")
+    data object SlotMachine : Screen("slot-machine")
+    data object Dice : Screen("dice")
+    data object Roulette : Screen("roulette")
 }

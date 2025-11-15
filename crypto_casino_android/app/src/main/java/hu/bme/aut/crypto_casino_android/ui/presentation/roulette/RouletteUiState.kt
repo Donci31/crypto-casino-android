@@ -11,7 +11,6 @@ enum class RouletteGamePhase {
     COMMITTED_WAITING,
     REVEALING,
     VERIFICATION,
-    REVEALED
 }
 
 data class RouletteUiState(
@@ -34,8 +33,6 @@ data class RouletteUiState(
     val error: String? = null,
     val clientSeed: String = generateClientSeed()
 ) {
-    val isCreatingGame: Boolean get() = gamePhase == RouletteGamePhase.COMMITTING
-    val isSettling: Boolean get() = gamePhase == RouletteGamePhase.REVEALING
     val isSpinning: Boolean get() = gamePhase == RouletteGamePhase.REVEALING
 }
 

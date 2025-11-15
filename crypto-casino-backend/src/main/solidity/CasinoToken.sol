@@ -11,7 +11,7 @@ contract CasinoToken is ERC20, Ownable {
     event TokensExchanged(address indexed userAddress, uint256 tokenAmount, uint256 timestamp);
 
     constructor() ERC20("CasinoToken", "CST") Ownable(msg.sender) {
-        _mint(msg.sender, 1000000 * 10 ** decimals());
+        _mint(msg.sender, 10000000 * 10 ** decimals());
     }
 
     function purchaseTokens() external payable {

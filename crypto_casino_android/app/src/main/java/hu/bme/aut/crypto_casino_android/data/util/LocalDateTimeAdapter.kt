@@ -29,12 +29,12 @@ class LocalDateTimeAdapter : TypeAdapter<LocalDateTime>() {
         val dateString = reader.nextString()
         return try {
             LocalDateTime.parse(dateString, formatter)
-        } catch (e: DateTimeParseException) {
+        } catch (_: DateTimeParseException) {
             // If standard ISO format fails, try with specific format
             // This handles formats like "2025-04-27T11:38:35" (no milliseconds)
             try {
                 LocalDateTime.parse(dateString)
-            } catch (e: DateTimeParseException) {
+            } catch (_: DateTimeParseException) {
                 null
             }
         }

@@ -6,7 +6,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.crypto_casino_android.data.model.roulette.BetType
 import hu.bme.aut.crypto_casino_android.data.repository.RouletteRepository
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -243,10 +242,6 @@ class RouletteViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun continueAfterVerification() {
-        _uiState.update { it.copy(gamePhase = RouletteGamePhase.REVEALED) }
     }
 
     private fun loadBalance() {

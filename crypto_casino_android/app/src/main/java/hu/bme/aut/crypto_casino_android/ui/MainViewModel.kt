@@ -47,8 +47,8 @@ class MainViewModel @Inject constructor(
     }
 
     sealed class AuthState {
-        object Loading : AuthState()
-        object Authenticated : AuthState()
-        object Unauthenticated : AuthState()
+        data object Loading : AuthState()
+        data object Authenticated : AuthState()
+        data object Unauthenticated : AuthState()
     }
 }

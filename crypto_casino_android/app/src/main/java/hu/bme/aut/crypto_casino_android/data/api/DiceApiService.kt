@@ -5,7 +5,6 @@ import hu.bme.aut.crypto_casino_android.data.model.dice.DiceConfigResponse
 import hu.bme.aut.crypto_casino_android.data.model.dice.DiceGameCreatedResponse
 import hu.bme.aut.crypto_casino_android.data.model.dice.DiceGameRequest
 import hu.bme.aut.crypto_casino_android.data.model.dice.DiceGameSettledResponse
-import hu.bme.aut.crypto_casino_android.data.model.dice.DiceGameStatusResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -22,9 +21,6 @@ interface DiceApiService {
 
     @POST("games/dice/settle/{gameId}")
     suspend fun settleGame(@Path("gameId") gameId: Long): Response<DiceGameSettledResponse>
-
-    @GET("games/dice/status/{gameId}")
-    suspend fun getGameStatus(@Path("gameId") gameId: Long): Response<DiceGameStatusResponse>
 
     @GET("games/dice/balance")
     suspend fun getBalance(): Response<DiceBalanceResponse>

@@ -14,7 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import hu.bme.aut.crypto_casino_android.ui.navigation.BottomNavigationBar
 import hu.bme.aut.crypto_casino_android.ui.navigation.NavGraph
@@ -62,9 +62,9 @@ fun MainContent(
                 currentRoute.value?.destination?.route in listOf(
                     Screen.Home.route,
                     Screen.Wallet.route,
+                    Screen.Games.route,
                     Screen.Transactions.route,
-                    Screen.Profile.route,
-                    Screen.SlotMachine.route
+                    Screen.Profile.route
                 )
             }
 

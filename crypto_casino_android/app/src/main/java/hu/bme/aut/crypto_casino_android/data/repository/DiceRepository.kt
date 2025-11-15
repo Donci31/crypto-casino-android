@@ -8,7 +8,6 @@ import hu.bme.aut.crypto_casino_android.data.model.dice.DiceConfigResponse
 import hu.bme.aut.crypto_casino_android.data.model.dice.DiceGameCreatedResponse
 import hu.bme.aut.crypto_casino_android.data.model.dice.DiceGameRequest
 import hu.bme.aut.crypto_casino_android.data.model.dice.DiceGameSettledResponse
-import hu.bme.aut.crypto_casino_android.data.model.dice.DiceGameStatusResponse
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
 import hu.bme.aut.crypto_casino_android.data.util.safeApiFlow
 import kotlinx.coroutines.flow.Flow
@@ -45,11 +44,6 @@ class DiceRepository @Inject constructor(
     fun settleGame(gameId: Long): Flow<ApiResult<DiceGameSettledResponse>> {
         Log.d(TAG, "Settling dice game: gameId=$gameId")
         return safeApiFlow { apiService.settleGame(gameId) }
-    }
-
-    fun getGameStatus(gameId: Long): Flow<ApiResult<DiceGameStatusResponse>> {
-        Log.d(TAG, "Fetching dice game status: gameId=$gameId")
-        return safeApiFlow { apiService.getGameStatus(gameId) }
     }
 
     fun getBalance(): Flow<ApiResult<DiceBalanceResponse>> {

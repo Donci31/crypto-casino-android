@@ -116,11 +116,6 @@ class SlotMachineViewModel @Inject constructor(
         _uiState.update { it.copy(selectedTab = index) }
     }
 
-    fun refreshAll() {
-        loadBalance()
-        loadGameHistory()
-    }
-
     private fun loadBalance() {
         viewModelScope.launch {
             slotMachineRepository.getBalance().collect { result ->

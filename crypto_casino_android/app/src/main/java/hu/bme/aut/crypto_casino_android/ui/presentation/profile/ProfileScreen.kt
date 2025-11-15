@@ -50,7 +50,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import hu.bme.aut.crypto_casino_android.data.model.user.User
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
 import hu.bme.aut.crypto_casino_android.ui.components.CasinoButton
@@ -65,6 +65,7 @@ fun ProfileScreen(
 ) {
     val userState by viewModel.userState.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
+    val statsState by viewModel.statsState.collectAsState()
 
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -105,6 +106,7 @@ fun ProfileScreen(
                     val user = (userState as ApiResult.Success<User>).data
                     ProfileContent(
                         user = user,
+                        statsState = statsState,
                         onLogout = { showLogoutDialog = true }
                     )
                 }
@@ -168,6 +170,7 @@ fun ProfileScreen(
 @Composable
 fun ProfileContent(
     user: User,
+    statsState: ApiResult<hu.bme.aut.crypto_casino_android.data.model.stats.UserStatsResponse>?,
     onLogout: () -> Unit
 ) {
     Column(
@@ -180,6 +183,21 @@ fun ProfileContent(
         ProfileHeader(user)
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Gaming Statistics Section
+        if (statsState is ApiResult.Success) {
+            GamingStatsSection(stats = statsState.data)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            GameBreakdownSection(gameStats = statsState.data.gameStats)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            FinancialSummarySection(stats = statsState.data)
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
         // Account information section
         ProfileSection(

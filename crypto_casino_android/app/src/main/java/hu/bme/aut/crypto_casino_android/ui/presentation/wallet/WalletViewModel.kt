@@ -269,16 +269,16 @@ class WalletViewModel @Inject constructor(
     }
 
     sealed class WalletUiState {
-        object Loading : WalletUiState()
-        object Empty : WalletUiState()
+        data object Loading : WalletUiState()
+        data object Empty : WalletUiState()
         data class Success(val wallets: List<WalletData>) : WalletUiState()
         data class Error(val message: String) : WalletUiState()
     }
 
     sealed class WalletOperationState {
-        object Idle : WalletOperationState()
-        object Loading : WalletOperationState()
-        object Success : WalletOperationState()
+        data object Idle : WalletOperationState()
+        data object Loading : WalletOperationState()
+        data object Success : WalletOperationState()
         data class Error(val message: String) : WalletOperationState()
     }
 }

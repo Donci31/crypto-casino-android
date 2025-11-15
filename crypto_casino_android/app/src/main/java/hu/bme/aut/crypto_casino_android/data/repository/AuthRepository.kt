@@ -7,9 +7,7 @@ import hu.bme.aut.crypto_casino_android.data.model.auth.AuthResponse
 import hu.bme.aut.crypto_casino_android.data.model.auth.RefreshTokenRequest
 import hu.bme.aut.crypto_casino_android.data.model.auth.UserLogin
 import hu.bme.aut.crypto_casino_android.data.model.auth.UserRegistration
-import hu.bme.aut.crypto_casino_android.data.model.user.User
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
-import hu.bme.aut.crypto_casino_android.data.util.safeApiFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow

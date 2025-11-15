@@ -6,7 +6,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.bme.aut.crypto_casino_android.data.model.dice.BetType
 import hu.bme.aut.crypto_casino_android.data.repository.DiceRepository
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

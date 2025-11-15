@@ -1,8 +1,8 @@
 package hu.bme.aut.crypto_casino_android.ui.presentation.transactions
 
+import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,28 +38,21 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import android.util.Log
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.paging.compose.collectAsLazyPagingItems
 import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
 import hu.bme.aut.crypto_casino_android.data.model.transaction.TransactionType
-import hu.bme.aut.crypto_casino_android.data.util.ApiResult
 import hu.bme.aut.crypto_casino_android.data.util.FormatUtils
 import hu.bme.aut.crypto_casino_android.ui.theme.Amber
 import hu.bme.aut.crypto_casino_android.ui.theme.Bet
@@ -127,7 +119,7 @@ fun TransactionDetailContent(
     transaction: BlockchainTransaction,
     snackbarHostState: SnackbarHostState
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
     val (icon, color, label) = when (transaction.eventType) {
@@ -276,8 +268,8 @@ fun TransactionDetailContent(
                     label = "Transaction Hash",
                     value = transaction.txHash,
                     onCopy = {
-                        clipboardManager.setText(AnnotatedString(transaction.txHash))
                         scope.launch {
+                            clipboard.setClipEntry(ClipData.newPlainText("Transaction Hash", transaction.txHash).toClipEntry())
                             snackbarHostState.showSnackbar("Transaction hash copied")
                         }
                     }
@@ -290,8 +282,8 @@ fun TransactionDetailContent(
                     label = "User Address",
                     value = transaction.userAddress,
                     onCopy = {
-                        clipboardManager.setText(AnnotatedString(transaction.userAddress))
                         scope.launch {
+                            clipboard.setClipEntry(ClipData.newPlainText("User Address", transaction.userAddress).toClipEntry())
                             snackbarHostState.showSnackbar("User address copied")
                         }
                     }
@@ -304,8 +296,8 @@ fun TransactionDetailContent(
                         label = "Game Address",
                         value = gameAddress,
                         onCopy = {
-                            clipboardManager.setText(AnnotatedString(gameAddress))
                             scope.launch {
+                                clipboard.setClipEntry(ClipData.newPlainText("Game Address", gameAddress).toClipEntry())
                                 snackbarHostState.showSnackbar("Game address copied")
                             }
                         }

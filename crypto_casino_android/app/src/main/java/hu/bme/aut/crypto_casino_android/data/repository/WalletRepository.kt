@@ -3,7 +3,6 @@ package hu.bme.aut.crypto_casino_android.data.repository
 import android.util.Log
 import hu.bme.aut.crypto_casino_android.data.api.WalletApi
 import hu.bme.aut.crypto_casino_android.data.local.WalletKeyManager
-import hu.bme.aut.crypto_casino_android.data.model.wallet.BalanceResponse
 import hu.bme.aut.crypto_casino_android.data.model.wallet.SetPrimaryRequest
 import hu.bme.aut.crypto_casino_android.data.model.wallet.WalletData
 import hu.bme.aut.crypto_casino_android.data.model.wallet.WalletRequest
@@ -36,11 +35,6 @@ class WalletRepository @Inject constructor(
         return safeApiFlow { walletApiService.setPrimaryWallet(SetPrimaryRequest(walletId)) }
     }
 
-    fun getWalletBalance(walletId: Long): Flow<ApiResult<BalanceResponse>> {
-        Log.d(TAG, "Fetching balance for wallet: $walletId")
-        return safeApiFlow { walletApiService.getWalletBalance(walletId) }
-    }
-
     suspend fun saveWalletWithKey(address: String, privateKey: String, isPrimary: Boolean = false) {
         Log.d(TAG, "Saving wallet with key: $address, isPrimary: $isPrimary")
         walletKeyManager.saveWalletKey(address, privateKey)
@@ -68,22 +62,6 @@ class WalletRepository @Inject constructor(
                 )
             }
         }
-    }
-
-    fun getPrimaryWalletData(): Flow<WalletData?> {
-        return getAllWalletData().map { wallets ->
-            wallets.find { it.isPrimary }
-        }
-    }
-
-    suspend fun deleteWallet(address: String) {
-        Log.d(TAG, "Deleting wallet: $address")
-        walletKeyManager.deleteWalletKey(address)
-    }
-
-    suspend fun clearAllWalletData() {
-        Log.d(TAG, "Clearing all wallet data")
-        walletKeyManager.clearAllWalletKeys()
     }
 
     companion object {

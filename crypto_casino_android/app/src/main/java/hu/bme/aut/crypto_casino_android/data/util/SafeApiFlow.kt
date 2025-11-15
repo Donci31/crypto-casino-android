@@ -1,7 +1,6 @@
 package hu.bme.aut.crypto_casino_android.data.util
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import retrofit2.Response

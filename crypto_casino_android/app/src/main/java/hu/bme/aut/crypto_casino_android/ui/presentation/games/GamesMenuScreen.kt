@@ -33,7 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.bme.aut.crypto_casino_android.ui.theme.Amber
-import hu.bme.aut.crypto_casino_android.ui.theme.Primary
 import hu.bme.aut.crypto_casino_android.ui.theme.Secondary
 import hu.bme.aut.crypto_casino_android.ui.theme.Tertiary
 

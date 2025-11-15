@@ -10,7 +10,6 @@ import hu.bme.aut.crypto_casino_android.data.repository.AuthRepository
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -46,14 +45,6 @@ class AuthViewModel @Inject constructor(
                 .collect { result ->
                     _registerState.value = result
                 }
-        }
-    }
-
-    fun logout() {
-        viewModelScope.launch {
-            authRepository.logout()
-            _loginState.value = null
-            _registerState.value = null
         }
     }
 

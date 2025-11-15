@@ -16,11 +16,6 @@ class UserRepository @Inject constructor(
         return safeApiFlow { userApi.getCurrentUser() }
     }
 
-    fun updateUser(user: User): Flow<ApiResult<User>> {
-        Log.d(TAG, "Updating user: ${user.username}")
-        return safeApiFlow { userApi.updateUser(user) }
-    }
-
     companion object {
         private const val TAG = "UserRepository"
     }

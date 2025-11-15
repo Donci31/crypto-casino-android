@@ -1,10 +1,10 @@
 package hu.bme.aut.crypto_casino_android.ui.presentation.dice
 
+import android.content.ClipData
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -56,23 +56,25 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import hu.bme.aut.crypto_casino_android.data.model.dice.BetType
-import hu.bme.aut.crypto_casino_android.ui.theme.Success
-import hu.bme.aut.crypto_casino_android.ui.theme.Info
 import hu.bme.aut.crypto_casino_android.ui.theme.Error
+import hu.bme.aut.crypto_casino_android.ui.theme.Info
+import hu.bme.aut.crypto_casino_android.ui.theme.Success
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
@@ -399,7 +401,7 @@ fun BetTypeSelector(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            BetType.values().forEach { betType ->
+            BetType.entries.forEach { betType ->
                 FilterChip(
                     selected = selectedBetType == betType,
                     onClick = { onBetTypeChange(betType) },
@@ -661,7 +663,8 @@ fun CommittedWaitingDisplay(
     betType: BetType,
     onReveal: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -738,7 +741,9 @@ fun CommittedWaitingDisplay(
                         }
                         IconButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(transactionHash))
+                                scope.launch {
+                                    clipboard.setClipEntry(ClipData.newPlainText("Transaction Hash", transactionHash).toClipEntry())
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -847,7 +852,9 @@ fun CommittedWaitingDisplay(
                         )
                         IconButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(serverSeedHash))
+                                scope.launch {
+                                    clipboard.setClipEntry(ClipData.newPlainText("Server Seed Hash", serverSeedHash).toClipEntry())
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -889,7 +896,9 @@ fun CommittedWaitingDisplay(
                         )
                         IconButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(clientSeed))
+                                scope.launch {
+                                    clipboard.setClipEntry(ClipData.newPlainText("Client Seed", clientSeed).toClipEntry())
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -977,7 +986,8 @@ fun VerificationDisplay(
     clientSeed: String,
     onContinue: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -1073,7 +1083,9 @@ fun VerificationDisplay(
                         )
                         IconButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(serverSeed))
+                                scope.launch {
+                                    clipboard.setClipEntry(ClipData.newPlainText("Server Seed", serverSeed).toClipEntry())
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -1118,7 +1130,9 @@ fun VerificationDisplay(
                         )
                         IconButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(serverSeedHash))
+                                scope.launch {
+                                    clipboard.setClipEntry(ClipData.newPlainText("Server Seed Hash", serverSeedHash).toClipEntry())
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -1162,7 +1176,9 @@ fun VerificationDisplay(
                     )
                     IconButton(
                         onClick = {
-                            clipboardManager.setText(AnnotatedString(clientSeed))
+                            scope.launch {
+                                clipboard.setClipEntry(ClipData.newPlainText("Client Seed", clientSeed).toClipEntry())
+                            }
                         },
                         modifier = Modifier.size(32.dp)
                     ) {

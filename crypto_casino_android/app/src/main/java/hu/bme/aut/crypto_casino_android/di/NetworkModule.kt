@@ -11,6 +11,7 @@ import hu.bme.aut.crypto_casino_android.data.api.BlockchainTransactionApi
 import hu.bme.aut.crypto_casino_android.data.api.DiceApiService
 import hu.bme.aut.crypto_casino_android.data.api.RouletteApiService
 import hu.bme.aut.crypto_casino_android.data.api.SlotMachineApiService
+import hu.bme.aut.crypto_casino_android.data.api.StatsApi
 import hu.bme.aut.crypto_casino_android.data.api.UserApi
 import hu.bme.aut.crypto_casino_android.data.api.WalletApi
 import hu.bme.aut.crypto_casino_android.data.interceptor.TokenRefreshInterceptor
@@ -135,5 +136,11 @@ object NetworkModule {
     @Singleton
     fun provideRouletteApiService(retrofit: Retrofit): RouletteApiService {
         return retrofit.create(RouletteApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStatsApi(retrofit: Retrofit): StatsApi {
+        return retrofit.create(StatsApi::class.java)
     }
 }

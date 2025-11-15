@@ -4,56 +4,39 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import dagger.hilt.android.lifecycle.HiltViewModel
+import hu.bme.aut.crypto_casino_android.data.local.WalletKeyManager
 import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
 import hu.bme.aut.crypto_casino_android.data.repository.BlockchainTransactionRepository
-import hu.bme.aut.crypto_casino_android.data.util.ApiResult
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class BlockchainTransactionsViewModel @Inject constructor(
-    private val transactionRepository: BlockchainTransactionRepository
+    transactionRepository: BlockchainTransactionRepository,
+    private val walletKeyManager: WalletKeyManager
 ) : ViewModel() {
+
+    private val _hasWallet = MutableStateFlow(true)
+    val hasWallet: StateFlow<Boolean> = _hasWallet.asStateFlow()
+
+    init {
+        checkWallet()
+    }
+
+    private fun checkWallet() {
+        viewModelScope.launch {
+            walletKeyManager.getPrimaryWalletAddress.collect { primaryWalletAddress ->
+                _hasWallet.value = !primaryWalletAddress.isNullOrBlank()
+            }
+        }
+    }
 
     val transactions: Flow<PagingData<BlockchainTransaction>> =
         transactionRepository.getTransactions()
             .cachedIn(viewModelScope)
-
-    private val _transactionState = MutableStateFlow<ApiResult<BlockchainTransaction>?>(null)
-    val transactionState: StateFlow<ApiResult<BlockchainTransaction>?> = _transactionState
-
-    private val _selectedTransaction = MutableStateFlow<BlockchainTransaction?>(null)
-    val selectedTransaction: StateFlow<BlockchainTransaction?> = _selectedTransaction
-
-    fun getTransactionByHash(txHash: String) {
-        viewModelScope.launch {
-            _transactionState.value = ApiResult.Loading
-            transactionRepository.getTransactionByHash(txHash).collect { result ->
-                _transactionState.value = result
-            }
-        }
-    }
-
-    fun getTransactionByCompositeKey(txHash: String, blockNumber: Long, logIndex: Int) {
-        viewModelScope.launch {
-            _transactionState.value = ApiResult.Loading
-            transactionRepository.getTransactionByCompositeKey(txHash, blockNumber, logIndex).collect { result ->
-                _transactionState.value = result
-            }
-        }
-    }
-
-    fun setSelectedTransaction(transaction: BlockchainTransaction) {
-        _selectedTransaction.value = transaction
-    }
-
-    fun clearSelectedTransaction() {
-        _selectedTransaction.value = null
-    }
-
-    fun clearTransactionState() {
-        _transactionState.value = null
-    }
 }

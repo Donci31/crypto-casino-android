@@ -1,16 +1,15 @@
 package hu.bme.aut.crypto_casino_android.data.util
 
+import org.web3j.utils.Convert
 import java.math.BigDecimal
+import java.math.BigInteger
+import java.math.RoundingMode
 import java.text.DecimalFormat
 
 object FormatUtils {
     fun formatAmount(amount: BigDecimal?): String {
         if (amount == null) return "0"
         return amount.stripTrailingZeros().toPlainString()
-    }
-
-    fun formatAmountWithSymbol(amount: BigDecimal?, symbol: String = "CST"): String {
-        return "${formatAmount(amount)} $symbol"
     }
 
     fun formatCurrency(amount: BigDecimal?, maxDecimals: Int = 2): String {
@@ -26,6 +25,17 @@ object FormatUtils {
                 df.format(amount)
             }
         }
+    }
+
+    fun formatEthBalance(balance: BigDecimal): String {
+        val formatter = DecimalFormat("#,##0.0000")
+        return formatter.format(balance.setScale(4, RoundingMode.DOWN))
+    }
+
+    fun formatTokenBalance(balance: BigInteger): String {
+        val tokenAmount = Convert.fromWei(balance.toBigDecimal(), Convert.Unit.ETHER)
+        val formatter = DecimalFormat("#,##0.00")
+        return formatter.format(tokenAmount.setScale(2, RoundingMode.DOWN))
     }
 
     fun shortenAddress(address: String, startChars: Int = 6, endChars: Int = 4): String {

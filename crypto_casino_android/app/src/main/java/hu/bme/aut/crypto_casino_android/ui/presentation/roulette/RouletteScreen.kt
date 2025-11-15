@@ -1,5 +1,6 @@
 package hu.bme.aut.crypto_casino_android.ui.presentation.roulette
 
+import android.content.ClipData
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -17,13 +18,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,24 +50,25 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import hu.bme.aut.crypto_casino_android.data.model.roulette.BetType
 import hu.bme.aut.crypto_casino_android.ui.theme.DraculaGold
-import hu.bme.aut.crypto_casino_android.ui.theme.Success
 import hu.bme.aut.crypto_casino_android.ui.theme.Info
-import hu.bme.aut.crypto_casino_android.ui.theme.Error
+import hu.bme.aut.crypto_casino_android.ui.theme.Success
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 @Composable
@@ -154,8 +154,7 @@ fun RouletteScreen(
 
                         ChipSelector(
                             selectedChipValue = uiState.selectedChipValue,
-                            onChipSelected = viewModel::selectChipValue,
-                            minBet = uiState.minBet
+                            onChipSelected = viewModel::selectChipValue
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -308,8 +307,7 @@ fun ResultDisplay(winningNumber: Int?, totalPayout: BigDecimal?) {
 @Composable
 fun ChipSelector(
     selectedChipValue: BigDecimal,
-    onChipSelected: (BigDecimal) -> Unit,
-    minBet: BigDecimal
+    onChipSelected: (BigDecimal) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -509,9 +507,9 @@ fun BettingArea(onBetPlaced: (BetType, Int) -> Unit) {
 @Composable
 fun StraightBetButton(number: Int, onClick: () -> Unit) {
     val redNumbers = listOf(1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36)
-    val backgroundColor = when {
-        number == 0 -> Color(0xFF4CAF50)
-        number in redNumbers -> Color(0xFFE53935)
+    val backgroundColor = when (number) {
+        0 -> Color(0xFF4CAF50)
+        in redNumbers -> Color(0xFFE53935)
         else -> Color(0xFF212121)
     }
 
@@ -694,7 +692,8 @@ fun RouletteCommittedWaitingDisplay(
     totalBetAmount: BigDecimal,
     onReveal: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -771,7 +770,9 @@ fun RouletteCommittedWaitingDisplay(
                         }
                         IconButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(transactionHash))
+                                scope.launch {
+                                    clipboard.setClipEntry(ClipData.newPlainText("Transaction Hash", transactionHash).toClipEntry())
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -916,7 +917,9 @@ fun RouletteCommittedWaitingDisplay(
                         )
                         IconButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(serverSeedHash))
+                                scope.launch {
+                                    clipboard.setClipEntry(ClipData.newPlainText("Server Seed Hash", serverSeedHash).toClipEntry())
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -958,7 +961,9 @@ fun RouletteCommittedWaitingDisplay(
                         )
                         IconButton(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(clientSeed))
+                                scope.launch {
+                                    clipboard.setClipEntry(ClipData.newPlainText("Client Seed", clientSeed).toClipEntry())
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {

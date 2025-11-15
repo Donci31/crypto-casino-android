@@ -20,7 +20,6 @@ class TokenRefreshInterceptor @Inject constructor(
         val originalRequest = chain.request()
         val response = chain.proceed(originalRequest)
 
-        // Handle both 401 and 403 responses as potential token expiration issues
         if ((response.code == 401 || response.code == 403) && !originalRequest.url.encodedPath.contains("/auth/")) {
             Log.d(TAG, "${response.code} received for ${originalRequest.url.encodedPath}, attempting token refresh")
             response.close()

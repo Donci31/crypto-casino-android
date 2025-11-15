@@ -20,4 +20,7 @@ public interface BlockchainTransactionRepository extends JpaRepository<Blockchai
 
 	Page<BlockchainTransaction> findByGameAddressOrderByTimestampDesc(String gameAddress, Pageable pageable);
 
+	List<BlockchainTransaction> findByUserAddressAndEventType(String userAddress,
+			BlockchainTransaction.TransactionType eventType);
+
 }

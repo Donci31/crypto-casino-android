@@ -32,10 +32,6 @@ class WalletKeyManager @Inject constructor(private val context: Context) {
         preferences[PRIMARY_WALLET_KEY]
     }
 
-    fun getWalletKey(address: String): Flow<String?> = context.walletKeysDataStore.data.map { preferences ->
-        preferences[stringPreferencesKey(WALLET_PREFIX + address)]
-    }
-
     suspend fun saveWalletKey(address: String, privateKey: String) {
         context.walletKeysDataStore.edit { preferences ->
             preferences[stringPreferencesKey(WALLET_PREFIX + address)] = privateKey

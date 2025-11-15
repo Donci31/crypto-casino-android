@@ -1,12 +1,29 @@
 package hu.bme.aut.crypto_casino_android.ui.presentation.wallet.dialogs
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import hu.bme.aut.crypto_casino_android.data.util.FormatUtils
+import org.web3j.utils.Convert
+import java.math.BigDecimal
 import java.math.BigInteger
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,7 +62,7 @@ fun TokenExchangeDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Available: $maxAmount CST",
+                    text = "Available: ${FormatUtils.formatTokenBalance(maxAmount)} CST",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.tertiary
                 )
@@ -56,8 +73,10 @@ fun TokenExchangeDialog(
                     text = "You will receive approximately: ${
                         try {
                             if (amount.isNotBlank()) {
-                                val tokenAmount = BigInteger(amount)
-                                "${tokenAmount.divide(BigInteger.valueOf(1000))} ETH"
+                                val tokenAmountWei = Convert.toWei(amount, Convert.Unit.ETHER).toBigInteger()
+                                val ethAmount = Convert.fromWei(tokenAmountWei.toBigDecimal(), Convert.Unit.ETHER)
+                                    .divide(BigDecimal(1000))
+                                "${FormatUtils.formatEthBalance(ethAmount)} ETH"
                             } else {
                                 "0 ETH"
                             }
@@ -80,7 +99,7 @@ fun TokenExchangeDialog(
                                 onExchange(tokenAmount)
                             }
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         // Handle invalid input
                     }
                 },

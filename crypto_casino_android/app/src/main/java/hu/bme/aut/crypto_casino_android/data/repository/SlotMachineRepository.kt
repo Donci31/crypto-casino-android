@@ -9,7 +9,6 @@ import hu.bme.aut.crypto_casino_android.data.model.slot.SpinResponse
 import hu.bme.aut.crypto_casino_android.data.util.ApiResult
 import hu.bme.aut.crypto_casino_android.data.util.safeApiFlow
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import java.math.BigDecimal
 import javax.inject.Inject

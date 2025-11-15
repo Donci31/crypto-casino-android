@@ -5,7 +5,6 @@ import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteConfigRespon
 import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteGameCreatedResponse
 import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteGameRequest
 import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteGameSettledResponse
-import hu.bme.aut.crypto_casino_android.data.model.roulette.RouletteGameStatusResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -22,9 +21,6 @@ interface RouletteApiService {
 
     @POST("games/roulette/settle/{gameId}")
     suspend fun settleGame(@Path("gameId") gameId: Long): Response<RouletteGameSettledResponse>
-
-    @GET("games/roulette/status/{gameId}")
-    suspend fun getGameStatus(@Path("gameId") gameId: Long): Response<RouletteGameStatusResponse>
 
     @GET("games/roulette/balance")
     suspend fun getBalance(): Response<RouletteBalanceResponse>

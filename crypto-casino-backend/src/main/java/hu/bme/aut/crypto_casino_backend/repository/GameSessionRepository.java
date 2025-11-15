@@ -19,4 +19,6 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
 
 	Page<GameSession> findByGameTypeOrderByCreatedAtDesc(String gameType, Pageable pageable);
 
+	List<GameSession> findByUserId(Long userId);
+
 }

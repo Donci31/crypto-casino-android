@@ -2,7 +2,10 @@ package hu.bme.aut.crypto_casino_android.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -21,8 +24,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
-import com.google.gson.Gson
-import hu.bme.aut.crypto_casino_android.data.model.transaction.BlockchainTransaction
 import hu.bme.aut.crypto_casino_android.ui.presentation.auth.LoginScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.auth.RegisterScreen
 import hu.bme.aut.crypto_casino_android.ui.presentation.dice.DiceScreen
@@ -64,7 +65,7 @@ fun NavGraph(
                 },
                 onRegisterSuccess = {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
+                        popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 }
             )
@@ -103,7 +104,7 @@ fun NavGraph(
             )
         }
 
-        composable(Screen.Transactions.route) { transactionsEntry ->
+        composable(Screen.Transactions.route) { _ ->
             BlockchainTransactionsScreen(
                 onTransactionClick = { transaction ->
                     navController.navigate(
@@ -113,6 +114,9 @@ fun NavGraph(
                             transaction.logIndex
                         )
                     )
+                },
+                onNavigateToWallet = {
+                    navController.navigate(Screen.Wallet.route)
                 }
             )
         }
@@ -216,9 +220,9 @@ fun BottomNavigationBar(navController: NavController) {
 }
 
 sealed class NavigationItem(val route: String, val icon: ImageVector, val title: String) {
-    object Home : NavigationItem(Screen.Home.route, Icons.Default.Home, "Home")
-    object Wallet : NavigationItem(Screen.Wallet.route, Icons.Default.AccountBalanceWallet, "Wallet")
-    object Games : NavigationItem(Screen.Games.route, Icons.Default.Casino, "Games")
-    object Transactions : NavigationItem(Screen.Transactions.route, Icons.AutoMirrored.Filled.List, "Transactions")
-    object Profile : NavigationItem(Screen.Profile.route, Icons.Default.Person, "Profile")
+    data object Home : NavigationItem(Screen.Home.route, Icons.Default.Home, "Home")
+    data object Wallet : NavigationItem(Screen.Wallet.route, Icons.Default.AccountBalanceWallet, "Wallet")
+    data object Games : NavigationItem(Screen.Games.route, Icons.Default.Casino, "Games")
+    data object Transactions : NavigationItem(Screen.Transactions.route, Icons.AutoMirrored.Filled.List, "Transactions")
+    data object Profile : NavigationItem(Screen.Profile.route, Icons.Default.Person, "Profile")
 }

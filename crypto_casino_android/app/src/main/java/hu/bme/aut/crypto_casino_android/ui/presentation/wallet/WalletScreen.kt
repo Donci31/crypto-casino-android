@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -28,19 +28,21 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -49,16 +51,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import hu.bme.aut.crypto_casino_android.data.model.wallet.WalletData
+import hu.bme.aut.crypto_casino_android.data.util.FormatUtils
 import hu.bme.aut.crypto_casino_android.ui.presentation.wallet.dialogs.AddWalletDialog
 import hu.bme.aut.crypto_casino_android.ui.presentation.wallet.dialogs.TokenDepositDialog
 import hu.bme.aut.crypto_casino_android.ui.presentation.wallet.dialogs.TokenExchangeDialog
@@ -81,7 +81,6 @@ fun WalletScreen(
     val tokenBalance by viewModel.tokenBalance.collectAsState()
     val vaultBalance by viewModel.vaultBalance.collectAsState()
 
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var showAddWalletDialog by remember { mutableStateOf(false) }
@@ -304,105 +303,171 @@ fun WalletContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
+        if (activeWallet != null) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Total Balance",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = FormatUtils.formatEthBalance(ethBalance),
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = "ETH",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                        )
+                    }
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "Tokens",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = FormatUtils.formatTokenBalance(tokenBalance),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = "CST",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "In Vault",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = FormatUtils.formatTokenBalance(vaultBalance),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = "CST",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FilledTonalButton(
+                    onClick = onPurchaseClick,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.ShoppingCart, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Buy")
+                }
+                FilledTonalButton(
+                    onClick = onExchangeClick,
+                    modifier = Modifier.weight(1f),
+                    enabled = tokenBalance > BigInteger.ZERO
+                ) {
+                    Icon(Icons.Default.LocalAtm, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Sell")
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FilledTonalButton(
+                    onClick = onDepositClick,
+                    modifier = Modifier.weight(1f),
+                    enabled = tokenBalance > BigInteger.ZERO
+                ) {
+                    Icon(Icons.Default.ArrowUpward, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Deposit")
+                }
+                FilledTonalButton(
+                    onClick = onWithdrawClick,
+                    modifier = Modifier.weight(1f),
+                    enabled = vaultBalance > BigInteger.ZERO
+                ) {
+                    Icon(Icons.Default.ArrowDownward, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Withdraw")
+                }
+            }
+        }
+
         Text(
             text = "Your Wallets",
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
         )
-        Spacer(modifier = Modifier.height(8.dp))
 
-        LazyColumn(
-            modifier = Modifier
-                .weight(0.3f)
-                .fillMaxWidth()
-        ) {
-            items(wallets) { wallet ->
-                WalletItem(
-                    wallet = wallet,
-                    isActive = wallet.address == activeWallet?.address,
-                    onClick = { onWalletSelected(wallet) },
-                    onSetPrimary = { onSetPrimary(wallet) }
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider()
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (activeWallet != null) {
-            Text(
-                text = "Balances",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Column(
-                modifier = Modifier
-                    .weight(0.3f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            ) {
-                BalanceItem(
-                    title = "ETH Balance",
-                    value = "$ethBalance ETH",
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                BalanceItem(
-                    title = "Token Balance",
-                    value = "$tokenBalance CST",
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                BalanceItem(
-                    title = "Vault Balance",
-                    value = "$vaultBalance CST",
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider()
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Actions",
-            style = MaterialTheme.typography.titleLarge
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            ActionButton(
-                text = "Buy",
-                icon = Icons.Default.ShoppingCart,
-                onClick = onPurchaseClick,
-                enabled = activeWallet != null
-            )
-            ActionButton(
-                text = "Sell",
-                icon = Icons.Default.LocalAtm,
-                onClick = onExchangeClick,
-                enabled = activeWallet != null && tokenBalance > BigInteger.ZERO
-            )
-            ActionButton(
-                text = "Deposit",
-                icon = Icons.Default.ArrowUpward,
-                onClick = onDepositClick,
-                enabled = activeWallet != null && tokenBalance > BigInteger.ZERO
-            )
-            ActionButton(
-                text = "Withdraw",
-                icon = Icons.Default.ArrowDownward,
-                onClick = onWithdrawClick,
-                enabled = activeWallet != null && vaultBalance > BigInteger.ZERO
+        wallets.forEach { wallet ->
+            WalletItem(
+                wallet = wallet,
+                isActive = wallet.address == activeWallet?.address,
+                onClick = { onWalletSelected(wallet) },
+                onSetPrimary = { onSetPrimary(wallet) }
             )
         }
     }
@@ -415,45 +480,64 @@ fun WalletItem(
     onClick: () -> Unit,
     onSetPrimary: () -> Unit
 ) {
-    Card(
+    OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(
+        colors = CardDefaults.outlinedCardColors(
             containerColor = if (isActive)
-                MaterialTheme.colorScheme.primaryContainer
+                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
             else
-                MaterialTheme.colorScheme.surfaceVariant
-        )
+                MaterialTheme.colorScheme.surface
+        ),
+        border = if (isActive)
+            CardDefaults.outlinedCardBorder().copy(
+                width = 2.dp,
+                brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.secondary)
+            )
+        else
+            CardDefaults.outlinedCardBorder()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = wallet.label,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = wallet.address,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (wallet.isPrimary) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
-                        text = "Primary",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        text = wallet.label,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
+                    if (wallet.isPrimary) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(
+                                text = "PRIMARY",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
+                Text(
+                    text = "${wallet.address.take(10)}...${wallet.address.takeLast(8)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
             }
 
             if (!wallet.isPrimary) {
@@ -469,79 +553,9 @@ fun WalletItem(
                     Icons.Default.StarRate,
                     contentDescription = "Primary Wallet",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(12.dp)
+                    modifier = Modifier.padding(8.dp)
                 )
             }
         }
-    }
-}
-
-@Composable
-fun BalanceItem(
-    title: String,
-    value: String,
-    color: Color
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                color = color,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-fun ActionButton(
-    text: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    enabled: Boolean
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(
-                    color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                    shape = CircleShape
-                )
-                .clickable(enabled = enabled) { onClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                icon,
-                contentDescription = text,
-                tint = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium,
-            color = if (enabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
