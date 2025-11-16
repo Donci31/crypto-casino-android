@@ -39,10 +39,14 @@ contract CasinoToken is ERC20, Ownable {
         emit TokensExchanged(msg.sender, tokenAmount, block.timestamp);
     }
 
-    function withdrawEth() external onlyOwner {
-        uint256 balance = address(this).balance;
-        require(balance > 0, "No ETH to withdraw");
+    function depositEth() external payable onlyOwner {
+        require(msg.value > 0, "Must send ETH to deposit");
+    }
 
-        payable(owner()).transfer(balance);
+    function withdrawEth(uint256 amount) external onlyOwner {
+        require(amount > 0, "Amount must be greater than 0");
+        require(address(this).balance >= amount, "Insufficient ETH in contract");
+
+        payable(owner()).transfer(amount);
     }
 }

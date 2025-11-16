@@ -17,12 +17,16 @@ contract CasinoVault is Ownable, ReentrancyGuard {
 
     mapping(address => uint256) public balances;
 
+    uint256 public houseBalance;
+
     event GameAuthorized(address indexed gameAddress, uint256 timestamp);
     event GameDeauthorized(address indexed gameAddress, uint256 timestamp);
     event Deposit(address indexed userAddress, uint256 amount, uint256 newBalance, uint256 timestamp);
     event Withdrawal(address indexed userAddress, uint256 amount, uint256 newBalance, uint256 timestamp);
     event BetPlaced(address indexed userAddress, uint256 amount, uint256 newBalance, address indexed gameAddress, uint256 timestamp);
     event WinPaid(address indexed userAddress, uint256 amount, uint256 newBalance, address indexed gameAddress, uint256 timestamp);
+    event ProfitWithdrawn(address indexed owner, uint256 amount, uint256 remainingHouseBalance, uint256 timestamp);
+    event HouseBalanceSeeded(address indexed owner, uint256 amount, uint256 newHouseBalance, uint256 timestamp);
 
     modifier onlyAuthorizedGame() {
         require(authorizedGames[msg.sender], "TokenGameVault: not an authorized game");
@@ -85,6 +89,7 @@ contract CasinoVault is Ownable, ReentrancyGuard {
         require(balances[player] >= amount, "TokenGameVault: insufficient balance");
 
         balances[player] -= amount;
+        houseBalance += amount;
         emit BetPlaced(player, amount, balances[player], msg.sender, block.timestamp);
 
         return true;
@@ -97,6 +102,9 @@ contract CasinoVault is Ownable, ReentrancyGuard {
         validAddress(player)
         returns (bool)
     {
+        require(houseBalance >= amount, "TokenGameVault: insufficient house balance");
+
+        houseBalance -= amount;
         balances[player] += amount;
         emit WinPaid(player, amount, balances[player], msg.sender, block.timestamp);
 
@@ -109,5 +117,23 @@ contract CasinoVault is Ownable, ReentrancyGuard {
 
     function isGameAuthorized(address gameAddress) external view returns (bool) {
         return authorizedGames[gameAddress];
+    }
+
+    function withdrawProfit(uint256 amount) external onlyOwner nonReentrant validAmount(amount) {
+        require(houseBalance >= amount, "TokenGameVault: insufficient house balance");
+
+        houseBalance -= amount;
+
+        token.safeTransfer(owner(), amount);
+
+        emit ProfitWithdrawn(owner(), amount, houseBalance, block.timestamp);
+    }
+
+    function seedHouseBalance(uint256 amount) external onlyOwner nonReentrant validAmount(amount) {
+        token.safeTransferFrom(msg.sender, address(this), amount);
+
+        houseBalance += amount;
+
+        emit HouseBalanceSeeded(owner(), amount, houseBalance, block.timestamp);
     }
 }
