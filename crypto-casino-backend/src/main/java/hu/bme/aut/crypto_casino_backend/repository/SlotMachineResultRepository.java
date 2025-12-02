@@ -9,6 +9,6 @@ import java.util.Optional;
 @Repository
 public interface SlotMachineResultRepository extends JpaRepository<SlotMachineResult, Long> {
 
-	Optional<SlotMachineResult> findByGameSessionId(Long gameSessionId);
+  Optional<SlotMachineResult> findByGameSessionId(Long gameSessionId);
 
 }

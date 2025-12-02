@@ -8,10 +8,12 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface BlockchainTransactionMapper {
 
-	BlockchainTransaction toEntity(BlockchainTransactionDto dto);
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "id", ignore = true)
+  BlockchainTransaction toEntity(BlockchainTransactionDto dto);
 
-	BlockchainTransactionDto toDto(BlockchainTransaction entity);
+  BlockchainTransactionDto toDto(BlockchainTransaction entity);
 
-	List<BlockchainTransactionDto> toDtoList(List<BlockchainTransaction> entities);
+  List<BlockchainTransactionDto> toDtoList(List<BlockchainTransaction> entities);
 
 }

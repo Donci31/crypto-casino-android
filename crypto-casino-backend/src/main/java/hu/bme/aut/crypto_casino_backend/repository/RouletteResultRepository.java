@@ -10,8 +10,8 @@ import java.util.Optional;
 @Repository
 public interface RouletteResultRepository extends JpaRepository<RouletteResult, Long> {
 
-	Optional<RouletteResult> findByGameSessionId(Long gameSessionId);
+  Optional<RouletteResult> findByGameSessionId(Long gameSessionId);
 
-	Optional<RouletteResult> findByGameId(BigInteger gameId);
+  Optional<RouletteResult> findByGameId(BigInteger gameId);
 
 }

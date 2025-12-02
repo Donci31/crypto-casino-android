@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AuthResponseDto {
 
-	private String token;
+  private String token;
 
-	private String refreshToken;
+  private String refreshToken;
 
-	private String tokenType;
+  private String tokenType;
 
-	private UserDto user;
+  private UserDto user;
 
 }

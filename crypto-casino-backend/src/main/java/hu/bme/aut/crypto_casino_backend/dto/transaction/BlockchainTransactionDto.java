@@ -14,22 +14,22 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class BlockchainTransactionDto {
 
-	private String txHash;
+  private String txHash;
 
-	private Long blockNumber;
+  private Long blockNumber;
 
-	private Integer logIndex;
+  private Integer logIndex;
 
-	private String userAddress;
+  private String userAddress;
 
-	private BlockchainTransaction.TransactionType eventType;
+  private BlockchainTransaction.TransactionType eventType;
 
-	private BigDecimal amount;
+  private BigDecimal amount;
 
-	private BigDecimal newBalance;
+  private BigDecimal newBalance;
 
-	private String gameAddress;
+  private String gameAddress;
 
-	private LocalDateTime timestamp;
+  private LocalDateTime timestamp;
 
 }

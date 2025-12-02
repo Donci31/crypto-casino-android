@@ -11,16 +11,16 @@ import java.util.List;
 @Repository
 public interface BlockchainTransactionRepository extends JpaRepository<BlockchainTransaction, Long> {
 
-	Page<BlockchainTransaction> findByUserAddressOrderByTimestampDesc(String userAddress, Pageable pageable);
+  Page<BlockchainTransaction> findByUserAddressOrderByTimestampDesc(String userAddress, Pageable pageable);
 
-	List<BlockchainTransaction> findByTxHash(String txHash);
+  List<BlockchainTransaction> findByTxHash(String txHash);
 
-	Page<BlockchainTransaction> findByEventTypeOrderByTimestampDesc(BlockchainTransaction.TransactionType eventType,
-			Pageable pageable);
+  Page<BlockchainTransaction> findByEventTypeOrderByTimestampDesc(BlockchainTransaction.TransactionType eventType,
+      Pageable pageable);
 
-	Page<BlockchainTransaction> findByGameAddressOrderByTimestampDesc(String gameAddress, Pageable pageable);
+  Page<BlockchainTransaction> findByGameAddressOrderByTimestampDesc(String gameAddress, Pageable pageable);
 
-	List<BlockchainTransaction> findByUserAddressAndEventType(String userAddress,
-			BlockchainTransaction.TransactionType eventType);
+  List<BlockchainTransaction> findByUserAddressAndEventType(String userAddress,
+      BlockchainTransaction.TransactionType eventType);
 
 }

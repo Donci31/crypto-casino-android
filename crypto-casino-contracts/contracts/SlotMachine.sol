@@ -97,28 +97,29 @@ contract SlotMachine is Ownable, ReentrancyGuard, Pausable {
         return spinId;
     }
 
-    function calculateWinnings(uint256 _bet, uint256[3] memory _reels) internal view returns (uint256) {
-        if (_reels[0] == _reels[1] && _reels[1] == _reels[2]) {
-            if (_reels[0] == 7) {
-                return adjustHouseEdgePayout((_bet * 1000) / 100);
-            }
-            return adjustHouseEdgePayout((_bet * 500) / 100);
+    function calculateWinnings(uint256 bet, uint256[3] memory r) internal view returns (uint256) {
+        bool allMatch = (r[0] == r[1] && r[1] == r[2]);
+        bool anyMatch = (r[0] == r[1] || r[1] == r[2] || r[0] == r[2]);
+        bool anySeven = (r[0] == 7 || r[1] == 7 || r[2] == 7);
+
+        uint256 multiplier;
+
+        if (allMatch) {
+            multiplier = 500;
+            if (anySeven) multiplier *= 2;
+        } 
+        else if (anyMatch) {
+            multiplier = 200;
+        } 
+        else if (anySeven) {
+            multiplier = 110;
+        } 
+        else {
+            return 0;
         }
 
-        if (_reels[0] == _reels[1] || _reels[1] == _reels[2] || _reels[0] == _reels[2]) {
-            return adjustHouseEdgePayout((_bet * 200) / 100);
-        }
-
-        if (_reels[0] == 7 || _reels[1] == 7 || _reels[2] == 7) {
-            return adjustHouseEdgePayout((_bet * 110) / 100);
-        }
-
-        return 0;
-    }
-
-    function adjustHouseEdgePayout(uint256 _oldPayout) internal view returns (uint256) {
-        uint256 adjustment = (_oldPayout * houseEdge) / 10000;
-        return _oldPayout - adjustment;
+        uint256 payout = (bet * multiplier) / 100;
+        return payout - (payout * houseEdge) / 10_000;
     }
 
     function getSpinState(uint256 spinId) external view returns (Spin memory) {

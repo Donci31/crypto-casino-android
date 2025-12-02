@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class BalanceResponse {
 
-	private String address;
+  private String address;
 
-	private BigDecimal balance;
+  private BigDecimal balance;
 
 }

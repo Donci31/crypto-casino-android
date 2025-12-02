@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SpinRequest {
 
-	@NotNull(message = "Bet amount is required")
-	@DecimalMin(value = "0.0", inclusive = false, message = "Bet amount must be greater than 0")
-	private BigDecimal betAmount;
+  @NotNull(message = "Bet amount is required")
+  @DecimalMin(value = "0.0", inclusive = false, message = "Bet amount must be greater than 0")
+  private BigDecimal betAmount;
 
 }

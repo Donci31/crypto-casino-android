@@ -14,28 +14,28 @@ import java.util.Map;
 @AllArgsConstructor
 public class UserStatsResponse {
 
-	private Integer totalGamesPlayed;
+  private Integer totalGamesPlayed;
 
-	private Double winRate;
+  private Double winRate;
 
-	private BigDecimal totalWinnings;
+  private BigDecimal totalWinnings;
 
-	private BigDecimal totalLosses;
+  private BigDecimal totalLosses;
 
-	private BigDecimal netProfitLoss;
+  private BigDecimal netProfitLoss;
 
-	private BigDecimal biggestWin;
+  private BigDecimal biggestWin;
 
-	private String mostPlayedGame;
+  private String mostPlayedGame;
 
-	private BigDecimal totalDeposited;
+  private BigDecimal totalDeposited;
 
-	private BigDecimal totalWithdrawn;
+  private BigDecimal totalWithdrawn;
 
-	private BigDecimal totalWagered;
+  private BigDecimal totalWagered;
 
-	private BigDecimal houseEdgePaid;
+  private BigDecimal houseEdgePaid;
 
-	private Map<String, GameStatsDto> gameStats;
+  private Map<String, GameStatsDto> gameStats;
 
 }

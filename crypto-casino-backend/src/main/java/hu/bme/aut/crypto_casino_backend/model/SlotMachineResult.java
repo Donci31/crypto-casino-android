@@ -14,24 +14,24 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SlotMachineResult {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-	@OneToOne
-	@JoinColumn(name = "game_session_id", nullable = false, unique = true)
-	private GameSession gameSession;
+  @OneToOne
+  @JoinColumn(name = "game_session_id", nullable = false, unique = true)
+  private GameSession gameSession;
 
-	@Column(name = "reel_1", nullable = false)
-	private Integer reel1;
+  @Column(name = "reel_1", nullable = false)
+  private Integer reel1;
 
-	@Column(name = "reel_2", nullable = false)
-	private Integer reel2;
+  @Column(name = "reel_2", nullable = false)
+  private Integer reel2;
 
-	@Column(name = "reel_3", nullable = false)
-	private Integer reel3;
+  @Column(name = "reel_3", nullable = false)
+  private Integer reel3;
 
-	@Column(name = "spin_id", nullable = false)
-	private Long spinId;
+  @Column(name = "spin_id", nullable = false)
+  private Long spinId;
 
 }

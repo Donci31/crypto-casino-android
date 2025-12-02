@@ -8,17 +8,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface GameSessionRepository extends JpaRepository<GameSession, Long> {
 
-	Page<GameSession> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
+  Page<GameSession> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 
-	List<GameSession> findTop10ByUserOrderByCreatedAtDesc(User user);
+  List<GameSession> findTop10ByUserOrderByCreatedAtDesc(User user);
 
-	Page<GameSession> findByGameTypeOrderByCreatedAtDesc(String gameType, Pageable pageable);
+  Page<GameSession> findByGameTypeOrderByCreatedAtDesc(String gameType, Pageable pageable);
 
-	List<GameSession> findByUserId(Long userId);
+  List<GameSession> findByUserId(Long userId);
 
 }

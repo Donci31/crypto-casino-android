@@ -48,10 +48,27 @@ object NetworkModule {
     @Provides
     fun provideAuthInterceptor(tokenManager: TokenManager): Interceptor {
         return Interceptor { chain ->
+            val originalRequest = chain.request()
+            val path = originalRequest.url.encodedPath
+
+            // Skip adding Authorization header for auth endpoints
+            val isAuthEndpoint = path.contains("/auth/login") ||
+                                 path.contains("/auth/register") ||
+                                 path.contains("/auth/refresh")
+
+            if (isAuthEndpoint) {
+                android.util.Log.d("AuthInterceptor", "Skipping Authorization header for auth endpoint: $path")
+                return@Interceptor chain.proceed(originalRequest)
+            }
+
             val token = runBlocking { tokenManager.getAccessToken.first() }
-            val request = chain.request().newBuilder()
+            android.util.Log.d("AuthInterceptor", "Token retrieved: ${if (token.isNullOrEmpty()) "EMPTY/NULL" else "EXISTS (length=${token.length})"}")
+            val request = originalRequest.newBuilder()
             if (!token.isNullOrEmpty()) {
+                android.util.Log.d("AuthInterceptor", "Adding Authorization header for $path")
                 request.addHeader("Authorization", "Bearer $token")
+            } else {
+                android.util.Log.w("AuthInterceptor", "NO TOKEN - Proceeding without Authorization header for $path")
             }
             chain.proceed(request.build())
         }

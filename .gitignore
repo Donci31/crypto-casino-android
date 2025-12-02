@@ -1,6 +1,8 @@
 *.webp
 *.md
 
+kls_database.db
+
 soljson-latest.js
 
 postgres.env

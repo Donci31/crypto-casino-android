@@ -8,39 +8,35 @@ import hu.bme.aut.crypto_casino_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
-	private final UserRepository userRepository;
+  private final UserRepository userRepository;
 
-	private final PasswordEncoder passwordEncoder;
+  private final PasswordEncoder passwordEncoder;
 
-	private final UserMapper userMapper;
+  private final UserMapper userMapper;
 
-	public UserDto getUserByUsername(String username) {
-		User user = userRepository.findByUsername(username)
-			.orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
-		return userMapper.toDto(user);
-	}
+  public UserDto getUserByUsername(String username) {
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+    return userMapper.toDto(user);
+  }
 
-	public UserDto updateUser(String username, UserDto userDto) {
-		User existingUser = userRepository.findByUsername(username)
-			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + username));
+  public UserDto updateUser(String username, UserDto userDto) {
+    User existingUser = userRepository.findByUsername(username)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + username));
 
-		userMapper.updateFromDto(userDto, existingUser);
+    userMapper.updateFromDto(userDto, existingUser);
 
-		if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
-			existingUser.setPasswordHash(passwordEncoder.encode(userDto.getPassword()));
-		}
+    if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
+      existingUser.setPasswordHash(passwordEncoder.encode(userDto.getPassword()));
+    }
 
-		User updated = userRepository.save(existingUser);
-		return userMapper.toDto(updated);
-	}
+    User updated = userRepository.save(existingUser);
+    return userMapper.toDto(updated);
+  }
 
 }

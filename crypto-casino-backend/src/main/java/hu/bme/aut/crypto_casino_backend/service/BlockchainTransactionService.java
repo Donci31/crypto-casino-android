@@ -17,35 +17,35 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class BlockchainTransactionService {
 
-	private final BlockchainTransactionRepository transactionRepository;
+  private final BlockchainTransactionRepository transactionRepository;
 
-	private final UserRepository userRepository;
+  private final UserRepository userRepository;
 
-	private final BlockchainTransactionMapper transactionMapper;
+  private final BlockchainTransactionMapper transactionMapper;
 
-	public Page<BlockchainTransactionDto> getTransactionsForUsername(String username, Pageable pageable) {
-		String userAddress = getUserAddressByUsername(username);
-		Page<BlockchainTransaction> transactionsPage = transactionRepository
-			.findByUserAddressOrderByTimestampDesc(userAddress, pageable);
-		return transactionsPage.map(transactionMapper::toDto);
-	}
+  public Page<BlockchainTransactionDto> getTransactionsForUsername(String username, Pageable pageable) {
+    String userAddress = getUserAddressByUsername(username);
+    Page<BlockchainTransaction> transactionsPage = transactionRepository
+        .findByUserAddressOrderByTimestampDesc(userAddress, pageable);
+    return transactionsPage.map(transactionMapper::toDto);
+  }
 
-	public Optional<BlockchainTransactionDto> getTransactionByHash(String txHash, String username) {
-		String userAddress = getUserAddressByUsername(username);
-		return transactionRepository.findByTxHash(txHash)
-			.stream()
-			.filter(tx -> tx.getUserAddress().equals(userAddress))
-			.map(transactionMapper::toDto)
-			.findFirst();
-	}
+  public Optional<BlockchainTransactionDto> getTransactionByHash(String txHash, String username) {
+    String userAddress = getUserAddressByUsername(username);
+    return transactionRepository.findByTxHash(txHash)
+        .stream()
+        .filter(tx -> tx.getUserAddress().equals(userAddress))
+        .map(transactionMapper::toDto)
+        .findFirst();
+  }
 
-	private String getUserAddressByUsername(String username) {
-		var user = userRepository.findByUsername(username)
-			.orElseThrow(() -> new IllegalArgumentException("User not found"));
+  private String getUserAddressByUsername(String username) {
+    var user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-		return user.getPrimaryWallet()
-			.map(UserWallet::getAddress)
-			.orElseThrow(() -> new IllegalStateException("User has no primary wallet configured"));
-	}
+    return user.getPrimaryWallet()
+        .map(UserWallet::getAddress)
+        .orElseThrow(() -> new IllegalStateException("User has no primary wallet configured"));
+  }
 
 }

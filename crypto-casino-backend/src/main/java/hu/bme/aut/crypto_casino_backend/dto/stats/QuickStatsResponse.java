@@ -13,16 +13,16 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class QuickStatsResponse {
 
-	private BigDecimal vaultBalance;
+  private BigDecimal vaultBalance;
 
-	private BigDecimal walletBalance;
+  private BigDecimal walletBalance;
 
-	private Integer totalGamesPlayed;
+  private Integer totalGamesPlayed;
 
-	private BigDecimal totalWinnings;
+  private BigDecimal totalWinnings;
 
-	private Double winRate;
+  private Double winRate;
 
-	private BigDecimal biggestWin;
+  private BigDecimal biggestWin;
 
 }

@@ -19,33 +19,33 @@ import java.util.Optional;
 @AllArgsConstructor
 public class User {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-	@Column(nullable = false, unique = true)
-	private String username;
+  @Column(nullable = false, unique = true)
+  private String username;
 
-	@Column(nullable = false, unique = true)
-	private String email;
+  @Column(nullable = false, unique = true)
+  private String email;
 
-	@Column(name = "password_hash", nullable = false)
-	private String passwordHash;
+  @Column(name = "password_hash", nullable = false)
+  private String passwordHash;
 
-	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<UserWallet> wallets;
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<UserWallet> wallets;
 
-	@Column(name = "created_at")
-	private LocalDateTime createdAt;
+  @Column(name = "created_at")
+  private LocalDateTime createdAt;
 
-	@PrePersist
-	protected void onCreate() {
-		wallets = new ArrayList<>();
-		createdAt = LocalDateTime.now();
-	}
+  @PrePersist
+  protected void onCreate() {
+    wallets = new ArrayList<>();
+    createdAt = LocalDateTime.now();
+  }
 
-	public Optional<UserWallet> getPrimaryWallet() {
-		return wallets.stream().filter(UserWallet::getIsPrimary).findFirst();
-	}
+  public Optional<UserWallet> getPrimaryWallet() {
+    return wallets.stream().filter(UserWallet::getIsPrimary).findFirst();
+  }
 
 }

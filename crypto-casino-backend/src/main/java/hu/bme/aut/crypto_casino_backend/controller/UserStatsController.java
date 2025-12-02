@@ -16,18 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserStatsController {
 
-	private final UserStatsService userStatsService;
+  private final UserStatsService userStatsService;
 
-	@GetMapping
-	public ResponseEntity<UserStatsResponse> getUserStats(@AuthenticationPrincipal UserPrincipal currentUser) {
-		UserStatsResponse stats = userStatsService.getUserStats(currentUser.getId());
-		return ResponseEntity.ok(stats);
-	}
+  @GetMapping
+  public ResponseEntity<UserStatsResponse> getUserStats(@AuthenticationPrincipal UserPrincipal currentUser) {
+    UserStatsResponse stats = userStatsService.getUserStats(currentUser.getId());
+    return ResponseEntity.ok(stats);
+  }
 
-	@GetMapping("/quick")
-	public ResponseEntity<QuickStatsResponse> getQuickStats(@AuthenticationPrincipal UserPrincipal currentUser) {
-		QuickStatsResponse quickStats = userStatsService.getQuickStats(currentUser.getId());
-		return ResponseEntity.ok(quickStats);
-	}
+  @GetMapping("/quick")
+  public ResponseEntity<QuickStatsResponse> getQuickStats(@AuthenticationPrincipal UserPrincipal currentUser) {
+    QuickStatsResponse quickStats = userStatsService.getQuickStats(currentUser.getId());
+    return ResponseEntity.ok(quickStats);
+  }
 
 }

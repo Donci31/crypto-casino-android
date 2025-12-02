@@ -18,47 +18,47 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class UserPrincipal implements UserDetails {
 
-	private final Long id;
+  private final Long id;
 
-	private final String username;
+  private final String username;
 
-	private final String email;
+  private final String email;
 
-	private final String password;
+  private final String password;
 
-	private List<String> walletAddresses;
+  private List<String> walletAddresses;
 
-	private String primaryWalletAddress;
+  private String primaryWalletAddress;
 
-	private final Collection<? extends GrantedAuthority> authorities;
+  private final Collection<? extends GrantedAuthority> authorities;
 
-	public static UserPrincipal create(User user) {
-		List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+  public static UserPrincipal create(User user) {
+    List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
 
-		List<String> walletAddresses = user.getWallets()
-			.stream()
-			.map(UserWallet::getAddress)
-			.collect(Collectors.toList());
+    List<String> walletAddresses = user.getWallets()
+        .stream()
+        .map(UserWallet::getAddress)
+        .collect(Collectors.toList());
 
-		String primaryWalletAddress = user.getPrimaryWallet().map(UserWallet::getAddress).orElse(null);
+    String primaryWalletAddress = user.getPrimaryWallet().map(UserWallet::getAddress).orElse(null);
 
-		return new UserPrincipal(user.getId(), user.getUsername(), user.getEmail(), user.getPasswordHash(),
-				walletAddresses, primaryWalletAddress, authorities);
-	}
+    return new UserPrincipal(user.getId(), user.getUsername(), user.getEmail(), user.getPasswordHash(),
+        walletAddresses, primaryWalletAddress, authorities);
+  }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o)
-			return true;
-		if (o == null || getClass() != o.getClass())
-			return false;
-		UserPrincipal that = (UserPrincipal) o;
-		return Objects.equals(id, that.id);
-	}
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+    UserPrincipal that = (UserPrincipal) o;
+    return Objects.equals(id, that.id);
+  }
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(id);
-	}
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
 
 }

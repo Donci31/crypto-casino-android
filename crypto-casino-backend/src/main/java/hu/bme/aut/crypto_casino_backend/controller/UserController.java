@@ -15,23 +15,23 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
 
-	private final UserService userService;
+  private final UserService userService;
 
-	@GetMapping
-	public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal UserPrincipal currentUser) {
-		String currentUsername = currentUser.getUsername();
+  @GetMapping
+  public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal UserPrincipal currentUser) {
+    String currentUsername = currentUser.getUsername();
 
-		UserDto userDto = userService.getUserByUsername(currentUsername);
-		return ResponseEntity.ok(userDto);
-	}
+    UserDto userDto = userService.getUserByUsername(currentUsername);
+    return ResponseEntity.ok(userDto);
+  }
 
-	@PutMapping
-	public ResponseEntity<UserDto> updateUser(@RequestBody UserDto updateDto) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String currentUsername = authentication.getName();
+  @PutMapping
+  public ResponseEntity<UserDto> updateUser(@RequestBody UserDto updateDto) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String currentUsername = authentication.getName();
 
-		UserDto updatedUser = userService.updateUser(currentUsername, updateDto);
-		return ResponseEntity.ok(updatedUser);
-	}
+    UserDto updatedUser = userService.updateUser(currentUsername, updateDto);
+    return ResponseEntity.ok(updatedUser);
+  }
 
 }

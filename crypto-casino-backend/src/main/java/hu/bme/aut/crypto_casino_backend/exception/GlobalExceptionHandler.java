@@ -16,71 +16,71 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-	@ExceptionHandler(ResourceNotFoundException.class)
-	public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
-		ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage(), LocalDateTime.now());
-		return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
-	}
+  @ExceptionHandler(ResourceNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage(), LocalDateTime.now());
+    return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+  }
 
-	@ExceptionHandler(ResourceAlreadyExistsException.class)
-	public ResponseEntity<ErrorResponse> handleResourceAlreadyExistsException(ResourceAlreadyExistsException ex) {
-		ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage(), LocalDateTime.now());
-		return new ResponseEntity<>(error, HttpStatus.CONFLICT);
-	}
+  @ExceptionHandler(ResourceAlreadyExistsException.class)
+  public ResponseEntity<ErrorResponse> handleResourceAlreadyExistsException(ResourceAlreadyExistsException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage(), LocalDateTime.now());
+    return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+  }
 
-	@ExceptionHandler(BadCredentialsException.class)
-	public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException ex) {
-		ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Invalid username or password",
-				LocalDateTime.now());
-		return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
-	}
+  @ExceptionHandler(BadCredentialsException.class)
+  public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Invalid username or password",
+        LocalDateTime.now());
+    return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+  }
 
-	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
-		Map<String, String> errors = new HashMap<>();
-		ex.getBindingResult().getAllErrors().forEach((error) -> {
-			String fieldName = ((FieldError) error).getField();
-			String errorMessage = error.getDefaultMessage();
-			errors.put(fieldName, errorMessage);
-		});
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    Map<String, String> errors = new HashMap<>();
+    ex.getBindingResult().getAllErrors().forEach((error) -> {
+      String fieldName = ((FieldError) error).getField();
+      String errorMessage = error.getDefaultMessage();
+      errors.put(fieldName, errorMessage);
+    });
 
-		ValidationErrorResponse errorResponse = new ValidationErrorResponse(HttpStatus.BAD_REQUEST.value(),
-				"Validation error", LocalDateTime.now(), errors);
+    ValidationErrorResponse errorResponse = new ValidationErrorResponse(HttpStatus.BAD_REQUEST.value(),
+        "Validation error", LocalDateTime.now(), errors);
 
-		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-	}
+    return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+  }
 
-	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
-		ErrorResponse error = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-				"An unexpected error occurred: " + ex.getMessage(), LocalDateTime.now());
-		return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-	}
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
+    ErrorResponse error = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+        "An unexpected error occurred: " + ex.getMessage(), LocalDateTime.now());
+    return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 
-	@Data
-	@AllArgsConstructor
-	public static class ErrorResponse {
+  @Data
+  @AllArgsConstructor
+  public static class ErrorResponse {
 
-		private int status;
+    private int status;
 
-		private String message;
+    private String message;
 
-		private LocalDateTime timestamp;
+    private LocalDateTime timestamp;
 
-	}
+  }
 
-	@Data
-	@AllArgsConstructor
-	public static class ValidationErrorResponse {
+  @Data
+  @AllArgsConstructor
+  public static class ValidationErrorResponse {
 
-		private int status;
+    private int status;
 
-		private String message;
+    private String message;
 
-		private LocalDateTime timestamp;
+    private LocalDateTime timestamp;
 
-		private Map<String, String> errors;
+    private Map<String, String> errors;
 
-	}
+  }
 
 }

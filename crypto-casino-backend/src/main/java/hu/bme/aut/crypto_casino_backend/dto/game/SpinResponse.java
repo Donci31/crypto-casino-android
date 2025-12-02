@@ -13,18 +13,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SpinResponse {
 
-	private Long spinId;
+  private Long spinId;
 
-	private int[] reels;
+  private int[] reels;
 
-	private BigDecimal betAmount;
+  private BigDecimal betAmount;
 
-	private BigDecimal winAmount;
+  private BigDecimal winAmount;
 
-	private boolean isWin;
+  private boolean isWin;
 
-	private LocalDateTime timestamp;
+  private LocalDateTime timestamp;
 
-	private BigDecimal newBalance;
+  private BigDecimal newBalance;
 
 }

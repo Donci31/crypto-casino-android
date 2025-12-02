@@ -1,17 +1,14 @@
 package hu.bme.aut.crypto_casino_backend.service;
 
-import hu.bme.aut.crypto_casino_backend.config.Web3jConfig;
 import hu.bme.aut.crypto_casino_backend.dto.stats.GameStatsDto;
 import hu.bme.aut.crypto_casino_backend.dto.stats.QuickStatsResponse;
 import hu.bme.aut.crypto_casino_backend.dto.stats.UserStatsResponse;
 import hu.bme.aut.crypto_casino_backend.exception.ResourceNotFoundException;
 import hu.bme.aut.crypto_casino_backend.model.BlockchainTransaction;
 import hu.bme.aut.crypto_casino_backend.model.GameSession;
-import hu.bme.aut.crypto_casino_backend.model.User;
 import hu.bme.aut.crypto_casino_backend.model.UserWallet;
 import hu.bme.aut.crypto_casino_backend.repository.BlockchainTransactionRepository;
 import hu.bme.aut.crypto_casino_backend.repository.GameSessionRepository;
-import hu.bme.aut.crypto_casino_backend.repository.UserRepository;
 import hu.bme.aut.crypto_casino_backend.repository.UserWalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,185 +30,173 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserStatsService {
 
-	private final UserRepository userRepository;
+  private final UserWalletRepository walletRepository;
 
-	private final UserWalletRepository walletRepository;
+  private final GameSessionRepository gameSessionRepository;
 
-	private final GameSessionRepository gameSessionRepository;
+  private final BlockchainTransactionRepository transactionRepository;
 
-	private final BlockchainTransactionRepository transactionRepository;
+  private final CasinoToken casinoToken;
 
-	private final CasinoToken casinoToken;
+  private final CasinoVault casinoVault;
 
-	private final CasinoVault casinoVault;
+  @Transactional(readOnly = true)
+  public UserStatsResponse getUserStats(Long userId) {
+    UserWallet primaryWallet = walletRepository.findByUserIdAndIsPrimaryTrue(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User does not have a primary wallet"));
 
-	private final Web3jConfig web3jConfig;
+    String walletAddress = primaryWallet.getAddress();
 
-	@Transactional(readOnly = true)
-	public UserStatsResponse getUserStats(Long userId) {
-		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    List<GameSession> allSessions = gameSessionRepository.findByUserId(userId);
+    List<GameSession> resolvedSessions = allSessions.stream().filter(GameSession::getIsResolved).toList();
 
-		UserWallet primaryWallet = walletRepository.findByUserIdAndIsPrimaryTrue(userId)
-			.orElseThrow(() -> new ResourceNotFoundException("User does not have a primary wallet"));
+    Integer totalGamesPlayed = resolvedSessions.size();
 
-		String walletAddress = primaryWallet.getAddress();
+    BigDecimal totalWinnings = resolvedSessions.stream()
+        .map(GameSession::getWinAmount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-		List<GameSession> allSessions = gameSessionRepository.findByUserId(userId);
-		List<GameSession> resolvedSessions = allSessions.stream().filter(GameSession::getIsResolved).toList();
+    BigDecimal totalWagered = resolvedSessions.stream()
+        .map(GameSession::getBetAmount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-		Integer totalGamesPlayed = resolvedSessions.size();
+    BigDecimal totalLosses = totalWagered.subtract(totalWinnings);
 
-		BigDecimal totalWinnings = resolvedSessions.stream()
-			.map(GameSession::getWinAmount)
-			.reduce(BigDecimal.ZERO, BigDecimal::add);
+    BigDecimal netProfitLoss = totalWinnings.subtract(totalWagered);
 
-		BigDecimal totalWagered = resolvedSessions.stream()
-			.map(GameSession::getBetAmount)
-			.reduce(BigDecimal.ZERO, BigDecimal::add);
+    long wins = resolvedSessions.stream().filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
+        .count();
 
-		BigDecimal totalLosses = totalWagered.subtract(totalWinnings);
+    Double winRate = totalGamesPlayed > 0 ? (double) wins / totalGamesPlayed : 0.0;
 
-		BigDecimal netProfitLoss = totalWinnings.subtract(totalWagered);
+    BigDecimal biggestWin = resolvedSessions.stream()
+        .map(GameSession::getWinAmount)
+        .max(BigDecimal::compareTo)
+        .orElse(BigDecimal.ZERO);
 
-		long wins = resolvedSessions.stream().filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
-			.count();
+    Map<String, Long> gameTypeCounts = resolvedSessions.stream()
+        .collect(Collectors.groupingBy(GameSession::getGameType, Collectors.counting()));
 
-		Double winRate = totalGamesPlayed > 0 ? (double) wins / totalGamesPlayed : 0.0;
+    String mostPlayedGame = gameTypeCounts.entrySet()
+        .stream()
+        .max(Map.Entry.comparingByValue())
+        .map(Map.Entry::getKey)
+        .orElse(null);
 
-		BigDecimal biggestWin = resolvedSessions.stream()
-			.map(GameSession::getWinAmount)
-			.max(BigDecimal::compareTo)
-			.orElse(BigDecimal.ZERO);
+    List<BlockchainTransaction> deposits = transactionRepository
+        .findByUserAddressAndEventType(walletAddress.toLowerCase(), BlockchainTransaction.TransactionType.DEPOSIT);
 
-		Map<String, Long> gameTypeCounts = resolvedSessions.stream()
-			.collect(Collectors.groupingBy(GameSession::getGameType, Collectors.counting()));
+    BigDecimal totalDeposited = deposits.stream()
+        .map(BlockchainTransaction::getAmount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-		String mostPlayedGame = gameTypeCounts.entrySet()
-			.stream()
-			.max(Map.Entry.comparingByValue())
-			.map(Map.Entry::getKey)
-			.orElse(null);
+    List<BlockchainTransaction> withdrawals = transactionRepository.findByUserAddressAndEventType(
+        walletAddress.toLowerCase(), BlockchainTransaction.TransactionType.WITHDRAWAL);
 
-		List<BlockchainTransaction> deposits = transactionRepository
-			.findByUserAddressAndEventType(walletAddress.toLowerCase(), BlockchainTransaction.TransactionType.DEPOSIT);
+    BigDecimal totalWithdrawn = withdrawals.stream()
+        .map(BlockchainTransaction::getAmount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-		BigDecimal totalDeposited = deposits.stream()
-			.map(BlockchainTransaction::getAmount)
-			.reduce(BigDecimal.ZERO, BigDecimal::add);
+    BigDecimal houseEdgePaid = totalWagered.subtract(totalWinnings).max(BigDecimal.ZERO);
 
-		List<BlockchainTransaction> withdrawals = transactionRepository.findByUserAddressAndEventType(
-				walletAddress.toLowerCase(), BlockchainTransaction.TransactionType.WITHDRAWAL);
+    Map<String, GameStatsDto> gameStats = new HashMap<>();
 
-		BigDecimal totalWithdrawn = withdrawals.stream()
-			.map(BlockchainTransaction::getAmount)
-			.reduce(BigDecimal.ZERO, BigDecimal::add);
+    for (String gameType : gameTypeCounts.keySet()) {
+      List<GameSession> gameSessions = resolvedSessions.stream()
+          .filter(session -> session.getGameType().equals(gameType))
+          .toList();
 
-		BigDecimal houseEdgePaid = totalWagered.subtract(totalWinnings).max(BigDecimal.ZERO);
+      int played = gameSessions.size();
+      long gameWins = gameSessions.stream()
+          .filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
+          .count();
+      int losses = played - (int) gameWins;
+      double gameWinRate = played > 0 ? (double) gameWins / played : 0.0;
 
-		Map<String, GameStatsDto> gameStats = new HashMap<>();
+      gameStats.put(gameType,
+          GameStatsDto.builder()
+              .played(played)
+              .wins((int) gameWins)
+              .losses(losses)
+              .winRate(gameWinRate)
+              .build());
+    }
 
-		for (String gameType : gameTypeCounts.keySet()) {
-			List<GameSession> gameSessions = resolvedSessions.stream()
-				.filter(session -> session.getGameType().equals(gameType))
-				.toList();
+    return UserStatsResponse.builder()
+        .totalGamesPlayed(totalGamesPlayed)
+        .winRate(winRate)
+        .totalWinnings(totalWinnings)
+        .totalLosses(totalLosses)
+        .netProfitLoss(netProfitLoss)
+        .biggestWin(biggestWin)
+        .mostPlayedGame(mostPlayedGame)
+        .totalDeposited(totalDeposited)
+        .totalWithdrawn(totalWithdrawn)
+        .totalWagered(totalWagered)
+        .houseEdgePaid(houseEdgePaid)
+        .gameStats(gameStats)
+        .build();
+  }
 
-			int played = gameSessions.size();
-			long gameWins = gameSessions.stream()
-				.filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
-				.count();
-			int losses = played - (int) gameWins;
-			double gameWinRate = played > 0 ? (double) gameWins / played : 0.0;
+  @Transactional(readOnly = true)
+  public QuickStatsResponse getQuickStats(Long userId) {
+    UserWallet primaryWallet = walletRepository.findByUserIdAndIsPrimaryTrue(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User does not have a primary wallet"));
 
-			gameStats.put(gameType,
-					GameStatsDto.builder()
-						.played(played)
-						.wins((int) gameWins)
-						.losses(losses)
-						.winRate(gameWinRate)
-						.build());
-		}
+    String walletAddress = primaryWallet.getAddress();
 
-		return UserStatsResponse.builder()
-			.totalGamesPlayed(totalGamesPlayed)
-			.winRate(winRate)
-			.totalWinnings(totalWinnings)
-			.totalLosses(totalLosses)
-			.netProfitLoss(netProfitLoss)
-			.biggestWin(biggestWin)
-			.mostPlayedGame(mostPlayedGame)
-			.totalDeposited(totalDeposited)
-			.totalWithdrawn(totalWithdrawn)
-			.totalWagered(totalWagered)
-			.houseEdgePaid(houseEdgePaid)
-			.gameStats(gameStats)
-			.build();
-	}
+    BigDecimal vaultBalance = getVaultBalance(walletAddress);
+    BigDecimal walletBalance = getWalletBalance(walletAddress);
 
-	@Transactional(readOnly = true)
-	public QuickStatsResponse getQuickStats(Long userId) {
-		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    List<GameSession> resolvedSessions = gameSessionRepository.findByUserId(userId)
+        .stream()
+        .filter(GameSession::getIsResolved)
+        .toList();
 
-		UserWallet primaryWallet = walletRepository.findByUserIdAndIsPrimaryTrue(userId)
-			.orElseThrow(() -> new ResourceNotFoundException("User does not have a primary wallet"));
+    Integer totalGamesPlayed = resolvedSessions.size();
 
-		String walletAddress = primaryWallet.getAddress();
+    BigDecimal totalWinnings = resolvedSessions.stream()
+        .map(GameSession::getWinAmount)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-		BigDecimal vaultBalance = getVaultBalance(walletAddress);
-		BigDecimal walletBalance = getWalletBalance(walletAddress);
+    long wins = resolvedSessions.stream().filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
+        .count();
 
-		List<GameSession> resolvedSessions = gameSessionRepository.findByUserId(userId)
-			.stream()
-			.filter(GameSession::getIsResolved)
-			.toList();
+    Double winRate = totalGamesPlayed > 0 ? (double) wins / totalGamesPlayed : 0.0;
 
-		Integer totalGamesPlayed = resolvedSessions.size();
+    BigDecimal biggestWin = resolvedSessions.stream()
+        .map(GameSession::getWinAmount)
+        .max(BigDecimal::compareTo)
+        .orElse(BigDecimal.ZERO);
 
-		BigDecimal totalWinnings = resolvedSessions.stream()
-			.map(GameSession::getWinAmount)
-			.reduce(BigDecimal.ZERO, BigDecimal::add);
+    return QuickStatsResponse.builder()
+        .vaultBalance(vaultBalance)
+        .walletBalance(walletBalance)
+        .totalGamesPlayed(totalGamesPlayed)
+        .totalWinnings(totalWinnings)
+        .winRate(winRate)
+        .biggestWin(biggestWin)
+        .build();
+  }
 
-		long wins = resolvedSessions.stream().filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
-			.count();
+  private BigDecimal getVaultBalance(String walletAddress) {
+    try {
+      BigInteger balance = casinoVault.getBalance(walletAddress).send();
+      return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
+    } catch (Exception e) {
+      log.error("Error getting vault balance from blockchain", e);
+      return BigDecimal.ZERO;
+    }
+  }
 
-		Double winRate = totalGamesPlayed > 0 ? (double) wins / totalGamesPlayed : 0.0;
-
-		BigDecimal biggestWin = resolvedSessions.stream()
-			.map(GameSession::getWinAmount)
-			.max(BigDecimal::compareTo)
-			.orElse(BigDecimal.ZERO);
-
-		return QuickStatsResponse.builder()
-			.vaultBalance(vaultBalance)
-			.walletBalance(walletBalance)
-			.totalGamesPlayed(totalGamesPlayed)
-			.totalWinnings(totalWinnings)
-			.winRate(winRate)
-			.biggestWin(biggestWin)
-			.build();
-	}
-
-	private BigDecimal getVaultBalance(String walletAddress) {
-		try {
-			BigInteger balance = casinoVault.getBalance(walletAddress).send();
-			return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
-		}
-		catch (Exception e) {
-			log.error("Error getting vault balance from blockchain", e);
-			return BigDecimal.ZERO;
-		}
-	}
-
-	private BigDecimal getWalletBalance(String walletAddress) {
-		try {
-			BigInteger balance = casinoToken.balanceOf(walletAddress).send();
-			return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
-		}
-		catch (Exception e) {
-			log.error("Error getting wallet balance from blockchain", e);
-			return BigDecimal.ZERO;
-		}
-	}
+  private BigDecimal getWalletBalance(String walletAddress) {
+    try {
+      BigInteger balance = casinoToken.balanceOf(walletAddress).send();
+      return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
+    } catch (Exception e) {
+      log.error("Error getting wallet balance from blockchain", e);
+      return BigDecimal.ZERO;
+    }
+  }
 
 }

@@ -12,12 +12,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SlotConfigResponse {
 
-	private BigDecimal minBet;
+  private BigDecimal minBet;
 
-	private BigDecimal maxBet;
+  private BigDecimal maxBet;
 
-	private int houseEdge;
+  private int houseEdge;
 
-	private boolean isActive;
+  private boolean isActive;
 
 }

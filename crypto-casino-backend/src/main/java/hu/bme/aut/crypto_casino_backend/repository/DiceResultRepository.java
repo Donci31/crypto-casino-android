@@ -10,8 +10,8 @@ import java.util.Optional;
 @Repository
 public interface DiceResultRepository extends JpaRepository<DiceResult, Long> {
 
-	Optional<DiceResult> findByGameSessionId(Long gameSessionId);
+  Optional<DiceResult> findByGameSessionId(Long gameSessionId);
 
-	Optional<DiceResult> findByGameId(BigInteger gameId);
+  Optional<DiceResult> findByGameId(BigInteger gameId);
 
 }

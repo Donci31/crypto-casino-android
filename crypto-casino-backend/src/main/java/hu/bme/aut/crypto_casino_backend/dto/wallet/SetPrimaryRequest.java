@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SetPrimaryRequest {
 
-	private Long walletId;
+  private Long walletId;
 
 }

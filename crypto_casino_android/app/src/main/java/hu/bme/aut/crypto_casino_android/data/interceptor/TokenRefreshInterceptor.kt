@@ -20,7 +20,11 @@ class TokenRefreshInterceptor @Inject constructor(
         val originalRequest = chain.request()
         val response = chain.proceed(originalRequest)
 
-        if ((response.code == 401 || response.code == 403) && !originalRequest.url.encodedPath.contains("/auth/")) {
+        val isAuthEndpoint = originalRequest.url.encodedPath.let {
+            it.contains("/auth/login") || it.contains("/auth/register") || it.contains("/auth/refresh")
+        }
+
+        if ((response.code == 401 || response.code == 403) && !isAuthEndpoint) {
             Log.d(TAG, "${response.code} received for ${originalRequest.url.encodedPath}, attempting token refresh")
             response.close()
 

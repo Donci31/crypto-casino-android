@@ -18,68 +18,68 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class DiceController {
 
-	private final DiceService diceService;
+  private final DiceService diceService;
 
-	@PostMapping("/create")
-	public ResponseEntity<DiceService.DiceGameCreatedResponse> createGame(
-			@AuthenticationPrincipal UserPrincipal currentUser, @Valid @RequestBody DiceGameRequest request) {
-		log.info("Dice game creation request from user: {}, bet: {}, prediction: {}, betType: {}",
-				currentUser.getUsername(), request.betAmount(), request.prediction(), request.betType());
+  @PostMapping("/create")
+  public ResponseEntity<DiceService.DiceGameCreatedResponse> createGame(
+      @AuthenticationPrincipal UserPrincipal currentUser, @Valid @RequestBody DiceGameRequest request) {
+    log.info("Dice game creation request from user: {}, bet: {}, prediction: {}, betType: {}",
+        currentUser.getUsername(), request.betAmount(), request.prediction(), request.betType());
 
-		DiceService.DiceGameCreatedResponse response = diceService.createGame(currentUser.getId(), request.betAmount(),
-				request.prediction(), request.betType(), request.clientSeed());
+    DiceService.DiceGameCreatedResponse response = diceService.createGame(currentUser.getId(), request.betAmount(),
+        request.prediction(), request.betType(), request.clientSeed());
 
-		log.info("Dice game created for user {}: gameId={}, serverSeedHash={}", currentUser.getUsername(),
-				response.getGameId(), response.getServerSeedHash());
+    log.info("Dice game created for user {}: gameId={}, serverSeedHash={}", currentUser.getUsername(),
+        response.getGameId(), response.getServerSeedHash());
 
-		return ResponseEntity.ok(response);
-	}
+    return ResponseEntity.ok(response);
+  }
 
-	@PostMapping("/settle/{gameId}")
-	public ResponseEntity<DiceService.DiceGameSettledResponse> settleGame(
-			@AuthenticationPrincipal UserPrincipal currentUser, @PathVariable Long gameId) {
-		log.info("Dice game settlement request from user: {}, gameId: {}", currentUser.getUsername(), gameId);
+  @PostMapping("/settle/{gameId}")
+  public ResponseEntity<DiceService.DiceGameSettledResponse> settleGame(
+      @AuthenticationPrincipal UserPrincipal currentUser, @PathVariable Long gameId) {
+    log.info("Dice game settlement request from user: {}, gameId: {}", currentUser.getUsername(), gameId);
 
-		DiceService.DiceGameSettledResponse response = diceService.settleGame(currentUser.getId(), gameId);
+    DiceService.DiceGameSettledResponse response = diceService.settleGame(currentUser.getId(), gameId);
 
-		log.info("Dice game settled for user {}: gameId={}, result={}, won={}", currentUser.getUsername(),
-				response.getGameId(), response.getResult(), response.isWon());
+    log.info("Dice game settled for user {}: gameId={}, result={}, won={}", currentUser.getUsername(),
+        response.getGameId(), response.getResult(), response.isWon());
 
-		return ResponseEntity.ok(response);
-	}
+    return ResponseEntity.ok(response);
+  }
 
-	@GetMapping("/status/{gameId}")
-	public ResponseEntity<DiceService.DiceGameStatusResponse> getGameStatus(
-			@AuthenticationPrincipal UserPrincipal currentUser, @PathVariable Long gameId) {
-		log.info("Dice game status request from user: {}, gameId: {}", currentUser.getUsername(), gameId);
-		DiceService.DiceGameStatusResponse status = diceService.getGameStatus(currentUser.getId(), gameId);
-		return ResponseEntity.ok(status);
-	}
+  @GetMapping("/status/{gameId}")
+  public ResponseEntity<DiceService.DiceGameStatusResponse> getGameStatus(
+      @AuthenticationPrincipal UserPrincipal currentUser, @PathVariable Long gameId) {
+    log.info("Dice game status request from user: {}, gameId: {}", currentUser.getUsername(), gameId);
+    DiceService.DiceGameStatusResponse status = diceService.getGameStatus(currentUser.getId(), gameId);
+    return ResponseEntity.ok(status);
+  }
 
-	@GetMapping("/config")
-	public ResponseEntity<DiceService.DiceConfigResponse> getConfig() {
-		log.info("Dice config request");
-		return ResponseEntity.ok(diceService.getDiceConfig());
-	}
+  @GetMapping("/config")
+  public ResponseEntity<DiceService.DiceConfigResponse> getConfig() {
+    log.info("Dice config request");
+    return ResponseEntity.ok(diceService.getDiceConfig());
+  }
 
-	@GetMapping("/balance")
-	public ResponseEntity<BalanceResponse> getBalance(@AuthenticationPrincipal UserPrincipal currentUser) {
-		log.info("Vault balance request for user: {}", currentUser.getUsername());
-		if (currentUser.getPrimaryWalletAddress() == null) {
-			log.warn("User {} has no primary wallet address", currentUser.getUsername());
-			return ResponseEntity.badRequest().build();
-		}
+  @GetMapping("/balance")
+  public ResponseEntity<BalanceResponse> getBalance(@AuthenticationPrincipal UserPrincipal currentUser) {
+    log.info("Vault balance request for user: {}", currentUser.getUsername());
+    if (currentUser.getPrimaryWalletAddress() == null) {
+      log.warn("User {} has no primary wallet address", currentUser.getUsername());
+      return ResponseEntity.badRequest().build();
+    }
 
-		BigDecimal balance = diceService.getVaultBalance(currentUser.getPrimaryWalletAddress());
-		log.info("Vault balance for user {}: {}", currentUser.getUsername(), balance);
-		return ResponseEntity.ok(new BalanceResponse(balance));
-	}
+    BigDecimal balance = diceService.getVaultBalance(currentUser.getPrimaryWalletAddress());
+    log.info("Vault balance for user {}: {}", currentUser.getUsername(), balance);
+    return ResponseEntity.ok(new BalanceResponse(balance));
+  }
 
-	public record DiceGameRequest(BigDecimal betAmount, Integer prediction, DiceResult.BetType betType,
-			String clientSeed) {
-	}
+  public record DiceGameRequest(BigDecimal betAmount, Integer prediction, DiceResult.BetType betType,
+      String clientSeed) {
+  }
 
-	public record BalanceResponse(BigDecimal balance) {
-	}
+  public record BalanceResponse(BigDecimal balance) {
+  }
 
 }

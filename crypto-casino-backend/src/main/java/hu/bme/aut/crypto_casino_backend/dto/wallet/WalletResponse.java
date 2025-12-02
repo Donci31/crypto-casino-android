@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class WalletResponse {
 
-	private Long id;
+  private Long id;
 
-	private String address;
+  private String address;
 
-	private String label;
+  private String label;
 
-	private Boolean isPrimary;
+  private Boolean isPrimary;
 
-	private LocalDateTime createdAt;
+  private LocalDateTime createdAt;
 
 }

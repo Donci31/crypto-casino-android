@@ -12,24 +12,24 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface WalletMapper {
 
-	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "user", source = "user")
-	@Mapping(target = "createdAt", ignore = true)
-	UserWallet walletRequestToUserWallet(WalletRequest walletRequest, User user);
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "user", source = "user")
+  @Mapping(target = "createdAt", ignore = true)
+  UserWallet walletRequestToUserWallet(WalletRequest walletRequest, User user);
 
-	WalletResponse userWalletToWalletResponse(UserWallet userWallet);
+  WalletResponse userWalletToWalletResponse(UserWallet userWallet);
 
-	List<WalletResponse> userWalletsToWalletResponses(List<UserWallet> userWallets);
+  List<WalletResponse> userWalletsToWalletResponses(List<UserWallet> userWallets);
 
-	@Mapping(target = "address", source = "userWallet.address")
-	@Mapping(target = "balance", source = "balance")
-	BalanceResponse toBalanceResponse(UserWallet userWallet, BigDecimal balance);
+  @Mapping(target = "address", source = "userWallet.address")
+  @Mapping(target = "balance", source = "balance")
+  BalanceResponse toBalanceResponse(UserWallet userWallet, BigDecimal balance);
 
-	@BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "user", ignore = true)
-	@Mapping(target = "address", ignore = true)
-	@Mapping(target = "createdAt", ignore = true)
-	void updateUserWalletFromRequest(WalletRequest walletRequest, @MappingTarget UserWallet userWallet);
+  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "user", ignore = true)
+  @Mapping(target = "address", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  void updateUserWalletFromRequest(WalletRequest walletRequest, @MappingTarget UserWallet userWallet);
 
 }

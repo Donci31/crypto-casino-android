@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GameStatsDto {
 
-	private Integer played;
+  private Integer played;
 
-	private Integer wins;
+  private Integer wins;
 
-	private Integer losses;
+  private Integer losses;
 
-	private Double winRate;
+  private Double winRate;
 
 }

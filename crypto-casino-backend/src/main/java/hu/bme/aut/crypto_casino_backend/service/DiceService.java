@@ -1,6 +1,5 @@
 package hu.bme.aut.crypto_casino_backend.service;
 
-import hu.bme.aut.crypto_casino_backend.config.Web3jConfig;
 import hu.bme.aut.crypto_casino_backend.exception.ResourceNotFoundException;
 import hu.bme.aut.crypto_casino_backend.model.DiceResult;
 import hu.bme.aut.crypto_casino_backend.model.GameSession;
@@ -32,409 +31,400 @@ import java.util.Map;
 @Slf4j
 public class DiceService {
 
-	private static final String GAME_TYPE = "DICE";
+  private static final String GAME_TYPE = "DICE";
 
-	private final UserRepository userRepository;
+  private final UserRepository userRepository;
 
-	private final UserWalletRepository walletRepository;
+  private final UserWalletRepository walletRepository;
 
-	private final GameSessionRepository gameSessionRepository;
+  private final GameSessionRepository gameSessionRepository;
 
-	private final DiceResultRepository diceResultRepository;
+  private final DiceResultRepository diceResultRepository;
 
-	private final Dice dice;
+  private final Dice dice;
 
-	private final org.web3j.casinovault.CasinoVault casinoVault;
+  private final org.web3j.casinovault.CasinoVault casinoVault;
 
-	private final Web3jConfig web3jConfig;
+  private final SecureRandom secureRandom = new SecureRandom();
 
-	private final SecureRandom secureRandom = new SecureRandom();
+  private final Map<Long, String> serverSeedStorage = new HashMap<>();
 
-	private final Map<Long, String> serverSeedStorage = new HashMap<>();
+  @Transactional
+  public DiceGameCreatedResponse createGame(Long userId, BigDecimal betAmount, Integer prediction,
+      DiceResult.BetType betType, String clientSeedHex) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-	@Transactional
-	public DiceGameCreatedResponse createGame(Long userId, BigDecimal betAmount, Integer prediction,
-			DiceResult.BetType betType, String clientSeedHex) {
-		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    UserWallet primaryWallet = walletRepository.findByUserIdAndIsPrimaryTrue(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User does not have a primary wallet"));
 
-		UserWallet primaryWallet = walletRepository.findByUserIdAndIsPrimaryTrue(userId)
-			.orElseThrow(() -> new ResourceNotFoundException("User does not have a primary wallet"));
+    String walletAddress = primaryWallet.getAddress();
 
-		String walletAddress = primaryWallet.getAddress();
+    validateBetParameters(betAmount, prediction, betType);
+
+    String validatedClientSeed = validateAndNormalizeClientSeed(clientSeedHex);
+
+    String serverSeed = generateServerSeed();
+    String serverSeedHash = calculateSeedHash(serverSeed);
+
+    GameSession gameSession = GameSession.builder()
+        .user(user)
+        .gameType(GAME_TYPE)
+        .betAmount(betAmount)
+        .winAmount(BigDecimal.ZERO)
+        .isResolved(false)
+        .build();
+
+    GameSession savedSession = gameSessionRepository.save(gameSession);
+
+    BlockchainGameCreationResult creationResult = createGameOnBlockchain(walletAddress, betAmount, prediction,
+        betType, serverSeedHash, validatedClientSeed);
+
+    Long gameId = creationResult.getGameId();
+    serverSeedStorage.put(gameId, serverSeed);
+
+    DiceResult diceResult = DiceResult.builder()
+        .gameSession(savedSession)
+        .gameId(BigInteger.valueOf(gameId))
+        .prediction(prediction)
+        .betType(betType)
+        .serverSeedHash(serverSeedHash)
+        .clientSeed(validatedClientSeed)
+        .settled(false)
+        .build();
+
+    diceResultRepository.save(diceResult);
+
+    return DiceGameCreatedResponse.builder()
+        .gameId(gameId)
+        .serverSeedHash(serverSeedHash)
+        .transactionHash(creationResult.getTransactionHash())
+        .blockNumber(creationResult.getBlockNumber())
+        .prediction(prediction)
+        .betType(betType)
+        .betAmount(betAmount)
+        .timestamp(LocalDateTime.now())
+        .build();
+  }
+
+  @Transactional
+  public DiceGameSettledResponse settleGame(Long userId, Long gameId) {
+    String serverSeed = serverSeedStorage.get(gameId);
+    if (serverSeed == null) {
+      throw new IllegalStateException("Server seed not found for game: " + gameId);
+    }
+
+    DiceSettleResultData result = settleGameOnBlockchain(gameId, serverSeed);
+
+    DiceResult diceResult = diceResultRepository.findByGameId(BigInteger.valueOf(gameId))
+        .orElseThrow(() -> new ResourceNotFoundException("Dice result not found"));
+
+    if (!diceResult.getGameSession().getUser().getId().equals(userId)) {
+      throw new IllegalStateException("User is not authorized to settle this game");
+    }
+
+    diceResult.setServerSeed(serverSeed);
+    diceResult.setResult(result.getResult());
+    diceResult.setPayout(result.getPayout().multiply(BigDecimal.TEN.pow(18)).toBigInteger());
+    diceResult.setSettled(true);
+
+    diceResultRepository.save(diceResult);
+
+    GameSession gameSession = diceResult.getGameSession();
+    gameSession.setWinAmount(result.getPayout());
+    gameSession.setIsResolved(true);
+    gameSession.setResolvedAt(LocalDateTime.now());
+    gameSessionRepository.save(gameSession);
+
+    serverSeedStorage.remove(gameId);
+
+    return DiceGameSettledResponse.builder()
+        .gameId(gameId)
+        .result(result.getResult())
+        .payout(result.getPayout())
+        .won(result.isWon())
+        .serverSeed(serverSeed)
+        .timestamp(LocalDateTime.now())
+        .build();
+  }
+
+  public DiceConfigResponse getDiceConfig() {
+    try {
+      BigInteger minBet = dice.minBet().send();
+      BigInteger maxBet = dice.maxBet().send();
+      BigInteger houseEdge = dice.houseEdge().send();
+      boolean isPaused = dice.paused().send();
+
+      return DiceConfigResponse.builder()
+          .minBet(new BigDecimal(minBet).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN))
+          .maxBet(new BigDecimal(maxBet).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN))
+          .houseEdge(houseEdge.intValue())
+          .isActive(!isPaused)
+          .build();
+    } catch (Exception e) {
+      log.error("Error getting dice config", e);
+      throw new RuntimeException("Failed to get dice configuration", e);
+    }
+  }
+
+  public BigDecimal getVaultBalance(String walletAddress) {
+    try {
+      BigInteger balance = casinoVault.getBalance(walletAddress).send();
+      return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
+    } catch (Exception e) {
+      log.error("Error getting balance from blockchain", e);
+      throw new RuntimeException("Failed to get balance from blockchain", e);
+    }
+  }
+
+  @Transactional(readOnly = true)
+  public DiceGameStatusResponse getGameStatus(Long userId, Long gameId) {
+    DiceResult diceResult = diceResultRepository.findByGameSessionId(gameId)
+        .orElseThrow(() -> new ResourceNotFoundException("Dice game not found"));
+
+    if (!diceResult.getGameSession().getUser().getId().equals(userId)) {
+      throw new IllegalStateException("User is not authorized to view this game");
+    }
+
+    return DiceGameStatusResponse.builder()
+        .gameId(diceResult.getGameId().longValue())
+        .prediction(diceResult.getPrediction())
+        .betType(diceResult.getBetType())
+        .serverSeedHash(diceResult.getServerSeedHash())
+        .clientSeed(diceResult.getClientSeed())
+        .result(diceResult.getResult())
+        .payout(diceResult.getPayout() != null
+            ? new BigDecimal(diceResult.getPayout()).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN)
+            : BigDecimal.ZERO)
+        .settled(diceResult.getSettled())
+        .serverSeed(diceResult.getServerSeed())
+        .build();
+  }
+
+  private BlockchainGameCreationResult createGameOnBlockchain(String userAddress, BigDecimal betAmount,
+      Integer prediction, DiceResult.BetType betType, String serverSeedHash, String clientSeedHex) {
+    try {
+      BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
+
+      byte[] serverSeedHashBytes = Numeric.hexStringToByteArray(serverSeedHash);
+      byte[] clientSeedBytes = Numeric.hexStringToByteArray(clientSeedHex);
+
+      log.debug("Creating game on blockchain - serverSeedHashBytes length: {}, clientSeedBytes length: {}",
+          serverSeedHashBytes.length, clientSeedBytes.length);
+
+      BigInteger betTypeValue = BigInteger.valueOf(betType.ordinal());
+
+      TransactionReceipt receipt = dice
+          .createGame(userAddress, serverSeedHashBytes, betAmountWei, BigInteger.valueOf(prediction),
+              betTypeValue, clientSeedBytes)
+          .send();
+
+      var events = Dice.getGameCreatedEvents(receipt);
+      if (events.isEmpty()) {
+        throw new RuntimeException("No GameCreated event found in transaction");
+      }
+
+      Long gameId = events.getFirst().gameId.longValue();
+      String transactionHash = receipt.getTransactionHash();
+      Long blockNumber = receipt.getBlockNumber().longValue();
+
+      return BlockchainGameCreationResult.builder()
+          .gameId(gameId)
+          .transactionHash(transactionHash)
+          .blockNumber(blockNumber)
+          .build();
+    } catch (Exception e) {
+      log.error("Error creating game on blockchain", e);
+      throw new RuntimeException("Failed to create game on blockchain", e);
+    }
+  }
+
+  private DiceSettleResultData settleGameOnBlockchain(Long gameId, String serverSeed) {
+    try {
+      byte[] serverSeedBytes = Numeric.hexStringToByteArray(serverSeed);
+
+      TransactionReceipt receipt = dice.settleGame(BigInteger.valueOf(gameId), serverSeedBytes).send();
+
+      var events = Dice.getGameSettledEvents(receipt);
+      if (events.isEmpty()) {
+        throw new RuntimeException("No GameSettled event found in transaction");
+      }
+
+      var event = events.getFirst();
+
+      BigDecimal payout = new BigDecimal(event.payout).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
+
+      return DiceSettleResultData.builder()
+          .gameSessionId(gameId)
+          .result(event.result.intValue())
+          .payout(payout)
+          .won(event.won)
+          .build();
+    } catch (Exception e) {
+      log.error("Error settling game on blockchain", e);
+      throw new RuntimeException("Failed to settle game on blockchain", e);
+    }
+  }
+
+  private String generateServerSeed() {
+    byte[] randomBytes = new byte[32];
+    secureRandom.nextBytes(randomBytes);
+    return Numeric.toHexString(randomBytes);
+  }
+
+  private String calculateSeedHash(String seed) {
+    byte[] seedBytes = Numeric.hexStringToByteArray(seed);
+    byte[] hash = Hash.sha3(seedBytes);
+    return Numeric.toHexString(hash);
+  }
+
+  private void validateBetParameters(BigDecimal betAmount, Integer prediction, DiceResult.BetType betType) {
+    DiceConfigResponse config = getDiceConfig();
+
+    if (betAmount.compareTo(config.getMinBet()) < 0) {
+      throw new IllegalArgumentException("Bet amount is below minimum: " + config.getMinBet());
+    }
+
+    if (betAmount.compareTo(config.getMaxBet()) > 0) {
+      throw new IllegalArgumentException("Bet amount is above maximum: " + config.getMaxBet());
+    }
+
+    if (!config.isActive()) {
+      throw new IllegalStateException("Dice game is currently not active");
+    }
+
+    if (prediction < 1 || prediction > 100) {
+      throw new IllegalArgumentException("Prediction must be between 1 and 100");
+    }
 
-		validateBetParameters(betAmount, prediction, betType);
+    if (betType == DiceResult.BetType.ROLL_UNDER || betType == DiceResult.BetType.ROLL_OVER) {
+      if (prediction < 2 || prediction > 99) {
+        throw new IllegalArgumentException("Prediction for ROLL_UNDER/ROLL_OVER must be between 2 and 99");
+      }
+    }
+  }
 
-		String validatedClientSeed = validateAndNormalizeClientSeed(clientSeedHex);
+  private String validateAndNormalizeClientSeed(String clientSeedHex) {
+    if (clientSeedHex == null || clientSeedHex.trim().isEmpty()) {
+      return generateServerSeed();
+    }
 
-		String serverSeed = generateServerSeed();
-		String serverSeedHash = calculateSeedHash(serverSeed);
-
-		GameSession gameSession = GameSession.builder()
-			.user(user)
-			.gameType(GAME_TYPE)
-			.betAmount(betAmount)
-			.winAmount(BigDecimal.ZERO)
-			.isResolved(false)
-			.build();
-
-		GameSession savedSession = gameSessionRepository.save(gameSession);
-
-		BlockchainGameCreationResult creationResult = createGameOnBlockchain(walletAddress, betAmount, prediction,
-				betType, serverSeedHash, validatedClientSeed);
-
-		Long gameId = creationResult.getGameId();
-		serverSeedStorage.put(gameId, serverSeed);
-
-		DiceResult diceResult = DiceResult.builder()
-			.gameSession(savedSession)
-			.gameId(BigInteger.valueOf(gameId))
-			.prediction(prediction)
-			.betType(betType)
-			.serverSeedHash(serverSeedHash)
-			.clientSeed(validatedClientSeed)
-			.settled(false)
-			.build();
-
-		diceResultRepository.save(diceResult);
-
-		return DiceGameCreatedResponse.builder()
-			.gameId(gameId)
-			.serverSeedHash(serverSeedHash)
-			.transactionHash(creationResult.getTransactionHash())
-			.blockNumber(creationResult.getBlockNumber())
-			.prediction(prediction)
-			.betType(betType)
-			.betAmount(betAmount)
-			.timestamp(LocalDateTime.now())
-			.build();
-	}
-
-	@Transactional
-	public DiceGameSettledResponse settleGame(Long userId, Long gameId) {
-		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-
-		String serverSeed = serverSeedStorage.get(gameId);
-		if (serverSeed == null) {
-			throw new IllegalStateException("Server seed not found for game: " + gameId);
-		}
-
-		DiceSettleResultData result = settleGameOnBlockchain(gameId, serverSeed);
-
-		DiceResult diceResult = diceResultRepository.findByGameId(BigInteger.valueOf(gameId))
-			.orElseThrow(() -> new ResourceNotFoundException("Dice result not found"));
-
-		if (!diceResult.getGameSession().getUser().getId().equals(userId)) {
-			throw new IllegalStateException("User is not authorized to settle this game");
-		}
-
-		diceResult.setServerSeed(serverSeed);
-		diceResult.setResult(result.getResult());
-		diceResult.setPayout(result.getPayout().multiply(BigDecimal.TEN.pow(18)).toBigInteger());
-		diceResult.setSettled(true);
-
-		diceResultRepository.save(diceResult);
-
-		GameSession gameSession = diceResult.getGameSession();
-		gameSession.setWinAmount(result.getPayout());
-		gameSession.setIsResolved(true);
-		gameSession.setResolvedAt(LocalDateTime.now());
-		gameSessionRepository.save(gameSession);
-
-		serverSeedStorage.remove(gameId);
-
-		return DiceGameSettledResponse.builder()
-			.gameId(gameId)
-			.result(result.getResult())
-			.payout(result.getPayout())
-			.won(result.isWon())
-			.serverSeed(serverSeed)
-			.timestamp(LocalDateTime.now())
-			.build();
-	}
-
-	public DiceConfigResponse getDiceConfig() {
-		try {
-			BigInteger minBet = dice.minBet().send();
-			BigInteger maxBet = dice.maxBet().send();
-			BigInteger houseEdge = dice.houseEdge().send();
-			boolean isPaused = dice.paused().send();
-
-			return DiceConfigResponse.builder()
-				.minBet(new BigDecimal(minBet).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN))
-				.maxBet(new BigDecimal(maxBet).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN))
-				.houseEdge(houseEdge.intValue())
-				.isActive(!isPaused)
-				.build();
-		}
-		catch (Exception e) {
-			log.error("Error getting dice config", e);
-			throw new RuntimeException("Failed to get dice configuration", e);
-		}
-	}
-
-	public BigDecimal getVaultBalance(String walletAddress) {
-		try {
-			BigInteger balance = casinoVault.getBalance(walletAddress).send();
-			return new BigDecimal(balance).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
-		}
-		catch (Exception e) {
-			log.error("Error getting balance from blockchain", e);
-			throw new RuntimeException("Failed to get balance from blockchain", e);
-		}
-	}
-
-	@Transactional(readOnly = true)
-	public DiceGameStatusResponse getGameStatus(Long userId, Long gameId) {
-		DiceResult diceResult = diceResultRepository.findByGameSessionId(gameId)
-			.orElseThrow(() -> new ResourceNotFoundException("Dice game not found"));
-
-		if (!diceResult.getGameSession().getUser().getId().equals(userId)) {
-			throw new IllegalStateException("User is not authorized to view this game");
-		}
-
-		return DiceGameStatusResponse.builder()
-			.gameId(diceResult.getGameId().longValue())
-			.prediction(diceResult.getPrediction())
-			.betType(diceResult.getBetType())
-			.serverSeedHash(diceResult.getServerSeedHash())
-			.clientSeed(diceResult.getClientSeed())
-			.result(diceResult.getResult())
-			.payout(diceResult.getPayout() != null
-					? new BigDecimal(diceResult.getPayout()).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN)
-					: BigDecimal.ZERO)
-			.settled(diceResult.getSettled())
-			.serverSeed(diceResult.getServerSeed())
-			.build();
-	}
-
-	private BlockchainGameCreationResult createGameOnBlockchain(String userAddress, BigDecimal betAmount,
-			Integer prediction, DiceResult.BetType betType, String serverSeedHash, String clientSeedHex) {
-		try {
-			BigInteger betAmountWei = betAmount.multiply(BigDecimal.TEN.pow(18)).toBigInteger();
-
-			byte[] serverSeedHashBytes = Numeric.hexStringToByteArray(serverSeedHash);
-			byte[] clientSeedBytes = Numeric.hexStringToByteArray(clientSeedHex);
-
-			log.debug("Creating game on blockchain - serverSeedHashBytes length: {}, clientSeedBytes length: {}",
-					serverSeedHashBytes.length, clientSeedBytes.length);
-
-			BigInteger betTypeValue = BigInteger.valueOf(betType.ordinal());
-
-			TransactionReceipt receipt = dice
-				.createGame(userAddress, serverSeedHashBytes, betAmountWei, BigInteger.valueOf(prediction),
-						betTypeValue, clientSeedBytes)
-				.send();
-
-			var events = Dice.getGameCreatedEvents(receipt);
-			if (events.isEmpty()) {
-				throw new RuntimeException("No GameCreated event found in transaction");
-			}
-
-			Long gameId = events.getFirst().gameId.longValue();
-			String transactionHash = receipt.getTransactionHash();
-			Long blockNumber = receipt.getBlockNumber().longValue();
-
-			return BlockchainGameCreationResult.builder()
-				.gameId(gameId)
-				.transactionHash(transactionHash)
-				.blockNumber(blockNumber)
-				.build();
-		}
-		catch (Exception e) {
-			log.error("Error creating game on blockchain", e);
-			throw new RuntimeException("Failed to create game on blockchain", e);
-		}
-	}
-
-	private DiceSettleResultData settleGameOnBlockchain(Long gameId, String serverSeed) {
-		try {
-			byte[] serverSeedBytes = Numeric.hexStringToByteArray(serverSeed);
-
-			TransactionReceipt receipt = dice.settleGame(BigInteger.valueOf(gameId), serverSeedBytes).send();
-
-			var events = Dice.getGameSettledEvents(receipt);
-			if (events.isEmpty()) {
-				throw new RuntimeException("No GameSettled event found in transaction");
-			}
-
-			var event = events.getFirst();
-
-			BigDecimal payout = new BigDecimal(event.payout).divide(BigDecimal.TEN.pow(18), RoundingMode.DOWN);
-
-			return DiceSettleResultData.builder()
-				.gameSessionId(gameId)
-				.result(event.result.intValue())
-				.payout(payout)
-				.won(event.won)
-				.build();
-		}
-		catch (Exception e) {
-			log.error("Error settling game on blockchain", e);
-			throw new RuntimeException("Failed to settle game on blockchain", e);
-		}
-	}
-
-	private String generateServerSeed() {
-		byte[] randomBytes = new byte[32];
-		secureRandom.nextBytes(randomBytes);
-		return Numeric.toHexString(randomBytes);
-	}
-
-	private String calculateSeedHash(String seed) {
-		byte[] seedBytes = Numeric.hexStringToByteArray(seed);
-		byte[] hash = Hash.sha3(seedBytes);
-		return Numeric.toHexString(hash);
-	}
-
-	private void validateBetParameters(BigDecimal betAmount, Integer prediction, DiceResult.BetType betType) {
-		DiceConfigResponse config = getDiceConfig();
-
-		if (betAmount.compareTo(config.getMinBet()) < 0) {
-			throw new IllegalArgumentException("Bet amount is below minimum: " + config.getMinBet());
-		}
-
-		if (betAmount.compareTo(config.getMaxBet()) > 0) {
-			throw new IllegalArgumentException("Bet amount is above maximum: " + config.getMaxBet());
-		}
-
-		if (!config.isActive()) {
-			throw new IllegalStateException("Dice game is currently not active");
-		}
-
-		if (prediction < 1 || prediction > 100) {
-			throw new IllegalArgumentException("Prediction must be between 1 and 100");
-		}
+    String normalizedSeed = clientSeedHex.trim();
+    if (!normalizedSeed.startsWith("0x")) {
+      normalizedSeed = "0x" + normalizedSeed;
+    }
 
-		if (betType == DiceResult.BetType.ROLL_UNDER || betType == DiceResult.BetType.ROLL_OVER) {
-			if (prediction < 2 || prediction > 99) {
-				throw new IllegalArgumentException("Prediction for ROLL_UNDER/ROLL_OVER must be between 2 and 99");
-			}
-		}
-	}
+    byte[] seedBytes = Numeric.hexStringToByteArray(normalizedSeed);
+    if (seedBytes.length != 32) {
+      throw new IllegalArgumentException("Client seed must be exactly 32 bytes (64 hex characters). Provided: "
+          + seedBytes.length + " bytes");
+    }
 
-	private String validateAndNormalizeClientSeed(String clientSeedHex) {
-		if (clientSeedHex == null || clientSeedHex.trim().isEmpty()) {
-			return generateServerSeed();
-		}
+    return normalizedSeed;
+  }
 
-		String normalizedSeed = clientSeedHex.trim();
-		if (!normalizedSeed.startsWith("0x")) {
-			normalizedSeed = "0x" + normalizedSeed;
-		}
+  @lombok.Data
+  @lombok.Builder
+  public static class DiceGameCreatedResponse {
 
-		byte[] seedBytes = Numeric.hexStringToByteArray(normalizedSeed);
-		if (seedBytes.length != 32) {
-			throw new IllegalArgumentException("Client seed must be exactly 32 bytes (64 hex characters). Provided: "
-					+ seedBytes.length + " bytes");
-		}
+    private Long gameId;
 
-		return normalizedSeed;
-	}
+    private String serverSeedHash;
 
-	@lombok.Data
-	@lombok.Builder
-	public static class DiceGameCreatedResponse {
+    private String transactionHash;
 
-		private Long gameId;
+    private Long blockNumber;
 
-		private String serverSeedHash;
+    private Integer prediction;
 
-		private String transactionHash;
+    private DiceResult.BetType betType;
 
-		private Long blockNumber;
+    private BigDecimal betAmount;
 
-		private Integer prediction;
+    private LocalDateTime timestamp;
 
-		private DiceResult.BetType betType;
+  }
 
-		private BigDecimal betAmount;
+  @lombok.Data
+  @lombok.Builder
+  public static class DiceGameSettledResponse {
 
-		private LocalDateTime timestamp;
+    private Long gameId;
 
-	}
+    private Integer result;
 
-	@lombok.Data
-	@lombok.Builder
-	public static class DiceGameSettledResponse {
+    private BigDecimal payout;
 
-		private Long gameId;
+    private boolean won;
 
-		private Integer result;
+    private String serverSeed;
 
-		private BigDecimal payout;
+    private LocalDateTime timestamp;
 
-		private boolean won;
+  }
 
-		private String serverSeed;
+  @lombok.Data
+  @lombok.Builder
+  public static class DiceGameStatusResponse {
 
-		private LocalDateTime timestamp;
+    private Long gameId;
 
-	}
+    private Integer prediction;
 
-	@lombok.Data
-	@lombok.Builder
-	public static class DiceGameStatusResponse {
+    private DiceResult.BetType betType;
 
-		private Long gameId;
+    private String serverSeedHash;
 
-		private Integer prediction;
+    private String clientSeed;
 
-		private DiceResult.BetType betType;
+    private Integer result;
 
-		private String serverSeedHash;
+    private BigDecimal payout;
 
-		private String clientSeed;
+    private Boolean settled;
 
-		private Integer result;
+    private String serverSeed;
 
-		private BigDecimal payout;
+  }
 
-		private Boolean settled;
+  @lombok.Data
+  @lombok.Builder
+  public static class DiceConfigResponse {
 
-		private String serverSeed;
+    private BigDecimal minBet;
 
-	}
+    private BigDecimal maxBet;
 
-	@lombok.Data
-	@lombok.Builder
-	public static class DiceConfigResponse {
+    private Integer houseEdge;
 
-		private BigDecimal minBet;
+    private boolean isActive;
 
-		private BigDecimal maxBet;
+  }
 
-		private Integer houseEdge;
+  @lombok.Data
+  @lombok.Builder
+  private static class DiceSettleResultData {
 
-		private boolean isActive;
+    private Long gameSessionId;
 
-	}
+    private Integer result;
 
-	@lombok.Data
-	@lombok.Builder
-	private static class DiceSettleResultData {
+    private BigDecimal payout;
 
-		private Long gameSessionId;
+    private boolean won;
 
-		private Integer result;
+  }
 
-		private BigDecimal payout;
+  @lombok.Data
+  @lombok.Builder
+  private static class BlockchainGameCreationResult {
 
-		private boolean won;
+    private Long gameId;
 
-	}
+    private String transactionHash;
 
-	@lombok.Data
-	@lombok.Builder
-	private static class BlockchainGameCreationResult {
+    private Long blockNumber;
 
-		private Long gameId;
-
-		private String transactionHash;
-
-		private Long blockNumber;
-
-	}
+  }
 
 }
