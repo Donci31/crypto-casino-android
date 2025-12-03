@@ -15,7 +15,7 @@ if (localPropertiesFile.exists()) {
 }
 
 android {
-    namespace = "hu.bme.aut.crypto_casino_android"
+    namespace = "hu.bme.aut.cryptocasino"
     compileSdk = 36
 
     defaultConfig {
@@ -40,49 +40,49 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-                "\"${localProperties.getProperty("BASE_URL")}\""
+                "\"${localProperties.getProperty("BASE_URL")}\"",
             )
             buildConfigField(
                 "String",
                 "ETHEREUM_RPC_URL",
-                "\"${localProperties.getProperty("ETHEREUM_RPC_URL")}\""
+                "\"${localProperties.getProperty("ETHEREUM_RPC_URL")}\"",
             )
             buildConfigField(
                 "String",
                 "CASINO_TOKEN_ADDRESS",
-                "\"${localProperties.getProperty("CASINO_TOKEN_ADDRESS")}\""
+                "\"${localProperties.getProperty("CASINO_TOKEN_ADDRESS")}\"",
             )
             buildConfigField(
                 "String",
                 "CASINO_VAULT_ADDRESS",
-                "\"${localProperties.getProperty("CASINO_VAULT_ADDRESS")}\""
+                "\"${localProperties.getProperty("CASINO_VAULT_ADDRESS")}\"",
             )
         }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             buildConfigField(
                 "String",
                 "BASE_URL",
-                "\"${localProperties.getProperty("BASE_URL")}\""
+                "\"${localProperties.getProperty("BASE_URL")}\"",
             )
             buildConfigField(
                 "String",
                 "ETHEREUM_RPC_URL",
-                "\"${localProperties.getProperty("ETHEREUM_RPC_URL")}\""
+                "\"${localProperties.getProperty("ETHEREUM_RPC_URL")}\"",
             )
             buildConfigField(
                 "String",
                 "CASINO_TOKEN_ADDRESS",
-                "\"${localProperties.getProperty("CASINO_TOKEN_ADDRESS")}\""
+                "\"${localProperties.getProperty("CASINO_TOKEN_ADDRESS")}\"",
             )
             buildConfigField(
                 "String",
                 "CASINO_VAULT_ADDRESS",
-                "\"${localProperties.getProperty("CASINO_VAULT_ADDRESS")}\""
+                "\"${localProperties.getProperty("CASINO_VAULT_ADDRESS")}\"",
             )
         }
     }
@@ -98,14 +98,15 @@ android {
 
     packaging {
         resources {
-            excludes += setOf(
-                "META-INF/INDEX.LIST",
-                "META-INF/DEPENDENCIES",
-                "META-INF/DISCLAIMER",
-                "META-INF/*LICENSE*",
-                "META-INF/*NOTICE*",
-                "META-INF/io.netty.versions.properties"
-            )
+            excludes +=
+                setOf(
+                    "META-INF/INDEX.LIST",
+                    "META-INF/DEPENDENCIES",
+                    "META-INF/DISCLAIMER",
+                    "META-INF/*LICENSE*",
+                    "META-INF/*NOTICE*",
+                    "META-INF/io.netty.versions.properties",
+                )
         }
     }
 }
