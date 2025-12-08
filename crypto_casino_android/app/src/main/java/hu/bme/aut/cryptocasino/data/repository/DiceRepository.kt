@@ -8,6 +8,7 @@ import hu.bme.aut.cryptocasino.data.model.dice.DiceConfigResponse
 import hu.bme.aut.cryptocasino.data.model.dice.DiceGameCreatedResponse
 import hu.bme.aut.cryptocasino.data.model.dice.DiceGameRequest
 import hu.bme.aut.cryptocasino.data.model.dice.DiceGameSettledResponse
+import hu.bme.aut.cryptocasino.data.model.dice.DicePrepareGameResponse
 import hu.bme.aut.cryptocasino.data.util.ApiResult
 import hu.bme.aut.cryptocasino.data.util.safeApiFlow
 import kotlinx.coroutines.flow.Flow
@@ -26,15 +27,22 @@ class DiceRepository
             return safeApiFlow { apiService.getDiceConfig() }
         }
 
+        fun prepareGame(): Flow<ApiResult<DicePrepareGameResponse>> {
+            Log.d(TAG, "Preparing dice game")
+            return safeApiFlow { apiService.prepareGame() }
+        }
+
         fun createGame(
+            tempGameId: String,
             betAmount: BigDecimal,
             prediction: Int,
             betType: BetType,
             clientSeed: String,
         ): Flow<ApiResult<DiceGameCreatedResponse>> {
-            Log.d(TAG, "Creating dice game: bet=$betAmount, prediction=$prediction, betType=$betType")
+            Log.d(TAG, "Creating dice game: tempGameId=$tempGameId, bet=$betAmount, prediction=$prediction, betType=$betType")
             val request =
                 DiceGameRequest(
+                    tempGameId = tempGameId,
                     betAmount = betAmount,
                     prediction = prediction,
                     betType = betType,

@@ -6,6 +6,7 @@ import java.security.SecureRandom
 
 enum class DiceGamePhase {
     IDLE,
+    PREPARING,
     COMMITTING,
     COMMITTED_WAITING,
     REVEALING,
@@ -23,6 +24,7 @@ data class DiceUiState(
     val prediction: Int = 50,
     val betType: BetType = BetType.ROLL_UNDER,
     val balance: BigDecimal = BigDecimal.ZERO,
+    val tempGameId: String? = null,
     val currentGameId: Long? = null,
     val serverSeedHash: String? = null,
     val serverSeed: String? = null,

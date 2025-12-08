@@ -29,6 +29,7 @@ import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.BettingArea
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.ChipSelector
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.ErrorMessage
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.PlacedBetsList
+import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.PrepareCommitmentCard
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.ResultDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.RouletteCommittedWaitingDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.RouletteWheelDisplay
@@ -93,6 +94,18 @@ fun RouletteScreen(viewModel: RouletteViewModel = hiltViewModel()) {
                 }
 
                 when (uiState.gamePhase) {
+                    RouletteGamePhase.PREPARING, RouletteGamePhase.COMMITTING -> {
+                        RoulettePrepareScreen(
+                            serverSeedHash = uiState.serverSeedHash,
+                            tempGameId = uiState.tempGameId,
+                            clientSeed = uiState.clientSeed,
+                            totalBetAmount = uiState.totalBetAmount,
+                            betCount = uiState.placedBets.size,
+                            isCommitting = uiState.gamePhase == RouletteGamePhase.COMMITTING,
+                            onProceedToCommit = viewModel::proceedToCommit,
+                        )
+                    }
+
                     RouletteGamePhase.COMMITTED_WAITING -> {
                         RouletteCommittedWaitingDisplay(
                             serverSeedHash = uiState.serverSeedHash,

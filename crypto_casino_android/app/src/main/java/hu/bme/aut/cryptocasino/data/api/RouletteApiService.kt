@@ -5,6 +5,7 @@ import hu.bme.aut.cryptocasino.data.model.roulette.RouletteConfigResponse
 import hu.bme.aut.cryptocasino.data.model.roulette.RouletteGameCreatedResponse
 import hu.bme.aut.cryptocasino.data.model.roulette.RouletteGameRequest
 import hu.bme.aut.cryptocasino.data.model.roulette.RouletteGameSettledResponse
+import hu.bme.aut.cryptocasino.data.model.roulette.RoulettePrepareGameResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -14,6 +15,9 @@ import retrofit2.http.Path
 interface RouletteApiService {
     @GET("games/roulette/config")
     suspend fun getRouletteConfig(): Response<RouletteConfigResponse>
+
+    @GET("games/roulette/prepare")
+    suspend fun prepareGame(): Response<RoulettePrepareGameResponse>
 
     @POST("games/roulette/create")
     suspend fun createGame(

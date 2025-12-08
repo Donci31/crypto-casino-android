@@ -102,25 +102,64 @@ class DiceViewModel
             }
 
             viewModelScope.launch {
-                _uiState.update { it.copy(gamePhase = DiceGamePhase.COMMITTING, error = null, result = null, won = null) }
+                _uiState.update { it.copy(gamePhase = DiceGamePhase.PREPARING, error = null, result = null, won = null) }
+
+                diceRepository.prepareGame().collect { prepareResult ->
+                    when (prepareResult) {
+                        is ApiResult.Success -> {
+                            val prepareData = prepareResult.data
+                            _uiState.update { currentState ->
+                                currentState.copy(
+                                    tempGameId = prepareData.tempGameId,
+                                    serverSeedHash = prepareData.serverSeedHash,
+                                )
+                            }
+                        }
+
+                        is ApiResult.Error -> {
+                            _uiState.update {
+                                it.copy(
+                                    error = "Failed to prepare game: ${prepareResult.exception.message}",
+                                    gamePhase = DiceGamePhase.IDLE,
+                                )
+                            }
+                        }
+
+                        is ApiResult.Loading -> {
+                        }
+                    }
+                }
+            }
+        }
+
+        fun proceedToCommit() {
+            val state = _uiState.value
+
+            if (state.gamePhase != DiceGamePhase.PREPARING || state.tempGameId == null) {
+                return
+            }
+
+            viewModelScope.launch {
+                _uiState.update { it.copy(gamePhase = DiceGamePhase.COMMITTING, error = null) }
 
                 val paddedSeed = padClientSeed(state.clientSeed)
+                val tempGameId = state.tempGameId
 
                 diceRepository
                     .createGame(
+                        tempGameId = tempGameId,
                         betAmount = state.currentBet,
                         prediction = state.prediction,
                         betType = state.betType,
                         clientSeed = paddedSeed,
-                    ).collect { result ->
-                        when (result) {
+                    ).collect { createResult ->
+                        when (createResult) {
                             is ApiResult.Success -> {
-                                val createdGame = result.data
+                                val createdGame = createResult.data
                                 _uiState.update { currentState ->
                                     currentState.copy(
                                         gamePhase = DiceGamePhase.COMMITTED_WAITING,
                                         currentGameId = createdGame.gameId,
-                                        serverSeedHash = createdGame.serverSeedHash,
                                         transactionHash = createdGame.transactionHash,
                                         blockNumber = createdGame.blockNumber,
                                     )
@@ -130,8 +169,9 @@ class DiceViewModel
                             is ApiResult.Error -> {
                                 _uiState.update {
                                     it.copy(
-                                        error = "Failed to create game: ${result.exception.message}",
+                                        error = "Failed to create game: ${createResult.exception.message}",
                                         gamePhase = DiceGamePhase.IDLE,
+                                        tempGameId = null,
                                     )
                                 }
                             }
@@ -211,7 +251,16 @@ class DiceViewModel
         }
 
         fun clearResult() {
-            _uiState.update { it.copy(gamePhase = DiceGamePhase.IDLE, result = null, won = null, payout = null, error = null) }
+            _uiState.update {
+                it.copy(
+                    gamePhase = DiceGamePhase.IDLE,
+                    result = null,
+                    won = null,
+                    payout = null,
+                    error = null,
+                    tempGameId = null,
+                )
+            }
         }
 
         fun updateClientSeed(input: String) {

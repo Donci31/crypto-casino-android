@@ -8,6 +8,7 @@ import hu.bme.aut.cryptocasino.data.model.roulette.RouletteConfigResponse
 import hu.bme.aut.cryptocasino.data.model.roulette.RouletteGameCreatedResponse
 import hu.bme.aut.cryptocasino.data.model.roulette.RouletteGameRequest
 import hu.bme.aut.cryptocasino.data.model.roulette.RouletteGameSettledResponse
+import hu.bme.aut.cryptocasino.data.model.roulette.RoulettePrepareGameResponse
 import hu.bme.aut.cryptocasino.data.util.ApiResult
 import hu.bme.aut.cryptocasino.data.util.safeApiFlow
 import kotlinx.coroutines.flow.Flow
@@ -25,13 +26,20 @@ class RouletteRepository
             return safeApiFlow { apiService.getRouletteConfig() }
         }
 
+        fun prepareGame(): Flow<ApiResult<RoulettePrepareGameResponse>> {
+            Log.d(TAG, "Preparing roulette game")
+            return safeApiFlow { apiService.prepareGame() }
+        }
+
         fun createGame(
+            tempGameId: String,
             bets: List<RouletteBetRequest>,
             clientSeed: String,
         ): Flow<ApiResult<RouletteGameCreatedResponse>> {
-            Log.d(TAG, "Creating roulette game: bets=${bets.size}, clientSeed=$clientSeed")
+            Log.d(TAG, "Creating roulette game: tempGameId=$tempGameId, bets=${bets.size}")
             val request =
                 RouletteGameRequest(
+                    tempGameId = tempGameId,
                     bets = bets,
                     clientSeed = clientSeed,
                 )

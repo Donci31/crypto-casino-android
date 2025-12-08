@@ -35,6 +35,7 @@ import hu.bme.aut.cryptocasino.ui.presentation.dice.components.ClientSeedInput
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.CommittedWaitingDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.DiceDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.PredictionSelector
+import hu.bme.aut.cryptocasino.ui.presentation.dice.components.PrepareCommitmentCard
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.ResultDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.VerificationDisplay
 
@@ -97,6 +98,19 @@ fun DiceScreen(viewModel: DiceViewModel = hiltViewModel()) {
                 }
 
                 when (uiState.gamePhase) {
+                    DiceGamePhase.PREPARING, DiceGamePhase.COMMITTING -> {
+                        DicePrepareScreen(
+                            serverSeedHash = uiState.serverSeedHash,
+                            tempGameId = uiState.tempGameId,
+                            clientSeed = uiState.clientSeed,
+                            betAmount = uiState.currentBet,
+                            prediction = uiState.prediction,
+                            betType = uiState.betType,
+                            isCommitting = uiState.gamePhase == DiceGamePhase.COMMITTING,
+                            onProceedToCommit = viewModel::proceedToCommit,
+                        )
+                    }
+
                     DiceGamePhase.COMMITTED_WAITING -> {
                         CommittedWaitingDisplay(
                             serverSeedHash = uiState.serverSeedHash,

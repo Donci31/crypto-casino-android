@@ -7,6 +7,7 @@ import java.security.SecureRandom
 
 enum class RouletteGamePhase {
     IDLE,
+    PREPARING,
     COMMITTING,
     COMMITTED_WAITING,
     REVEALING,
@@ -23,6 +24,7 @@ data class RouletteUiState(
     val placedBets: List<PlacedBet> = emptyList(),
     val totalBetAmount: BigDecimal = BigDecimal.ZERO,
     val balance: BigDecimal = BigDecimal.ZERO,
+    val tempGameId: String? = null,
     val currentGameId: Long? = null,
     val serverSeedHash: String? = null,
     val serverSeed: String? = null,

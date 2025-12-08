@@ -174,23 +174,62 @@ class RouletteViewModel
             }
 
             viewModelScope.launch {
-                _uiState.update { it.copy(gamePhase = RouletteGamePhase.COMMITTING, error = null, winningNumber = null) }
+                _uiState.update { it.copy(gamePhase = RouletteGamePhase.PREPARING, error = null, winningNumber = null) }
+
+                rouletteRepository.prepareGame().collect { prepareResult ->
+                    when (prepareResult) {
+                        is ApiResult.Success -> {
+                            val prepareData = prepareResult.data
+                            _uiState.update { currentState ->
+                                currentState.copy(
+                                    tempGameId = prepareData.tempGameId,
+                                    serverSeedHash = prepareData.serverSeedHash,
+                                )
+                            }
+                        }
+
+                        is ApiResult.Error -> {
+                            _uiState.update {
+                                it.copy(
+                                    error = "Failed to prepare game: ${prepareResult.exception.message}",
+                                    gamePhase = RouletteGamePhase.IDLE,
+                                )
+                            }
+                        }
+
+                        is ApiResult.Loading -> {
+                        }
+                    }
+                }
+            }
+        }
+
+        fun proceedToCommit() {
+            val state = _uiState.value
+
+            if (state.gamePhase != RouletteGamePhase.PREPARING || state.tempGameId == null) {
+                return
+            }
+
+            viewModelScope.launch {
+                _uiState.update { it.copy(gamePhase = RouletteGamePhase.COMMITTING, error = null) }
 
                 val betRequests = state.placedBets.map { it.toRequest() }
+                val tempGameId = state.tempGameId
 
                 rouletteRepository
                     .createGame(
+                        tempGameId = tempGameId,
                         bets = betRequests,
                         clientSeed = state.clientSeed,
-                    ).collect { result ->
-                        when (result) {
+                    ).collect { createResult ->
+                        when (createResult) {
                             is ApiResult.Success -> {
-                                val createdGame = result.data
+                                val createdGame = createResult.data
                                 _uiState.update { currentState ->
                                     currentState.copy(
                                         gamePhase = RouletteGamePhase.COMMITTED_WAITING,
                                         currentGameId = createdGame.gameId,
-                                        serverSeedHash = createdGame.serverSeedHash,
                                         transactionHash = createdGame.transactionHash,
                                         blockNumber = createdGame.blockNumber,
                                     )
@@ -200,8 +239,9 @@ class RouletteViewModel
                             is ApiResult.Error -> {
                                 _uiState.update {
                                     it.copy(
-                                        error = "Failed to create game: ${result.exception.message}",
+                                        error = "Failed to create game: ${createResult.exception.message}",
                                         gamePhase = RouletteGamePhase.IDLE,
+                                        tempGameId = null,
                                     )
                                 }
                             }
@@ -284,6 +324,7 @@ class RouletteViewModel
                     error = null,
                     placedBets = emptyList(),
                     totalBetAmount = BigDecimal.ZERO,
+                    tempGameId = null,
                 )
             }
         }

@@ -49,9 +49,39 @@ public class DiceService {
 
   private final Map<Long, String> serverSeedStorage = new HashMap<>();
 
+  private final Map<String, TempGameData> tempGameStorage = new java.util.concurrent.ConcurrentHashMap<>();
+
+  public PrepareGameResponse prepareGame(Long userId) {
+    String serverSeed = generateServerSeed();
+    String serverSeedHash = calculateSeedHash(serverSeed);
+    String tempGameId = java.util.UUID.randomUUID().toString();
+
+    tempGameStorage.put(tempGameId,
+        TempGameData.builder()
+            .serverSeed(serverSeed)
+            .serverSeedHash(serverSeedHash)
+            .userId(userId)
+            .createdAt(LocalDateTime.now())
+            .build());
+
+    log.debug("Prepared game for user {}: tempGameId={}, hash={}", userId, tempGameId, serverSeedHash);
+
+    return PrepareGameResponse.builder().tempGameId(tempGameId).serverSeedHash(serverSeedHash).build();
+  }
+
   @Transactional
-  public DiceGameCreatedResponse createGame(Long userId, BigDecimal betAmount, Integer prediction,
+  public DiceGameCreatedResponse createGame(Long userId, String tempGameId, BigDecimal betAmount, Integer prediction,
       DiceResult.BetType betType, String clientSeedHex) {
+    if (tempGameId == null || tempGameId.isBlank()) {
+      throw new IllegalArgumentException("tempGameId is required. Please call /prepare endpoint first.");
+    }
+    TempGameData tempData = tempGameStorage.get(tempGameId);
+    if (tempData == null) {
+      throw new IllegalStateException("Temp game not found or expired: " + tempGameId);
+    }
+    if (!tempData.getUserId().equals(userId)) {
+      throw new IllegalStateException("Unauthorized: temp game belongs to different user");
+    }
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
@@ -64,8 +94,8 @@ public class DiceService {
 
     String validatedClientSeed = validateAndNormalizeClientSeed(clientSeedHex);
 
-    String serverSeed = generateServerSeed();
-    String serverSeedHash = calculateSeedHash(serverSeed);
+    String serverSeed = tempData.getServerSeed();
+    String serverSeedHash = tempData.getServerSeedHash();
 
     GameSession gameSession = GameSession.builder()
         .user(user)
@@ -94,6 +124,9 @@ public class DiceService {
         .build();
 
     diceResultRepository.save(diceResult);
+
+    tempGameStorage.remove(tempGameId);
+    log.debug("Cleaned up temp game {}", tempGameId);
 
     return DiceGameCreatedResponse.builder()
         .gameId(gameId)
@@ -424,6 +457,30 @@ public class DiceService {
     private String transactionHash;
 
     private Long blockNumber;
+
+  }
+
+  @lombok.Data
+  @lombok.Builder
+  public static class PrepareGameResponse {
+
+    private String tempGameId;
+
+    private String serverSeedHash;
+
+  }
+
+  @lombok.Data
+  @lombok.Builder
+  private static class TempGameData {
+
+    private String serverSeed;
+
+    private String serverSeedHash;
+
+    private Long userId;
+
+    private LocalDateTime createdAt;
 
   }
 

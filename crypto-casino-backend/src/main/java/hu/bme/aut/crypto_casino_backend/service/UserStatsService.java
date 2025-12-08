@@ -64,7 +64,8 @@ public class UserStatsService {
 
     BigDecimal netProfitLoss = totalWinnings.subtract(totalWagered);
 
-    long wins = resolvedSessions.stream().filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
+    long wins = resolvedSessions.stream()
+        .filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
         .count();
 
     Double winRate = totalGamesPlayed > 0 ? (double) wins / totalGamesPlayed : 0.0;
@@ -159,7 +160,8 @@ public class UserStatsService {
         .map(GameSession::getWinAmount)
         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-    long wins = resolvedSessions.stream().filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
+    long wins = resolvedSessions.stream()
+        .filter(session -> session.getWinAmount().compareTo(BigDecimal.ZERO) > 0)
         .count();
 
     Double winRate = totalGamesPlayed > 0 ? (double) wins / totalGamesPlayed : 0.0;

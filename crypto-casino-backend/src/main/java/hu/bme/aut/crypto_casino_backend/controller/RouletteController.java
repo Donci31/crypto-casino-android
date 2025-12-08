@@ -20,14 +20,27 @@ public class RouletteController {
 
   private final RouletteService rouletteService;
 
+  @GetMapping("/prepare")
+  public ResponseEntity<RouletteService.PrepareGameResponse> prepareGame(
+      @AuthenticationPrincipal UserPrincipal currentUser) {
+    log.info("Roulette game prepare request from user: {}", currentUser.getUsername());
+
+    RouletteService.PrepareGameResponse response = rouletteService.prepareGame(currentUser.getId());
+
+    log.info("Roulette game prepared for user {}: tempGameId={}, serverSeedHash={}", currentUser.getUsername(),
+        response.getTempGameId(), response.getServerSeedHash());
+
+    return ResponseEntity.ok(response);
+  }
+
   @PostMapping("/create")
   public ResponseEntity<RouletteService.RouletteGameCreatedResponse> createGame(
       @AuthenticationPrincipal UserPrincipal currentUser, @Valid @RequestBody RouletteGameRequest request) {
-    log.info("Roulette game creation request from user: {}, bets count: {}", currentUser.getUsername(),
-        request.bets().size());
+    log.info("Roulette game creation request from user: {}, tempGameId: {}, bets count: {}",
+        currentUser.getUsername(), request.tempGameId(), request.bets().size());
 
     RouletteService.RouletteGameCreatedResponse response = rouletteService.createGame(currentUser.getId(),
-        request.bets(), request.clientSeed());
+        request.tempGameId(), request.bets(), request.clientSeed());
 
     log.info("Roulette game created for user {}: gameId={}, serverSeedHash={}", currentUser.getUsername(),
         response.getGameId(), response.getServerSeedHash());
@@ -76,7 +89,7 @@ public class RouletteController {
     return ResponseEntity.ok(new BalanceResponse(balance));
   }
 
-  public record RouletteGameRequest(List<RouletteService.BetRequest> bets, String clientSeed) {
+  public record RouletteGameRequest(String tempGameId, List<RouletteService.BetRequest> bets, String clientSeed) {
   }
 
   public record BalanceResponse(BigDecimal balance) {

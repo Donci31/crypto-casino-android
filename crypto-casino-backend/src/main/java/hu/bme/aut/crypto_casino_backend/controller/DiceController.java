@@ -20,14 +20,28 @@ public class DiceController {
 
   private final DiceService diceService;
 
+  @GetMapping("/prepare")
+  public ResponseEntity<DiceService.PrepareGameResponse> prepareGame(
+      @AuthenticationPrincipal UserPrincipal currentUser) {
+    log.info("Dice game prepare request from user: {}", currentUser.getUsername());
+
+    DiceService.PrepareGameResponse response = diceService.prepareGame(currentUser.getId());
+
+    log.info("Dice game prepared for user {}: tempGameId={}, serverSeedHash={}", currentUser.getUsername(),
+        response.getTempGameId(), response.getServerSeedHash());
+
+    return ResponseEntity.ok(response);
+  }
+
   @PostMapping("/create")
   public ResponseEntity<DiceService.DiceGameCreatedResponse> createGame(
       @AuthenticationPrincipal UserPrincipal currentUser, @Valid @RequestBody DiceGameRequest request) {
-    log.info("Dice game creation request from user: {}, bet: {}, prediction: {}, betType: {}",
-        currentUser.getUsername(), request.betAmount(), request.prediction(), request.betType());
+    log.info("Dice game creation request from user: {}, tempGameId: {}, bet: {}, prediction: {}, betType: {}",
+        currentUser.getUsername(), request.tempGameId(), request.betAmount(), request.prediction(),
+        request.betType());
 
-    DiceService.DiceGameCreatedResponse response = diceService.createGame(currentUser.getId(), request.betAmount(),
-        request.prediction(), request.betType(), request.clientSeed());
+    DiceService.DiceGameCreatedResponse response = diceService.createGame(currentUser.getId(), request.tempGameId(),
+        request.betAmount(), request.prediction(), request.betType(), request.clientSeed());
 
     log.info("Dice game created for user {}: gameId={}, serverSeedHash={}", currentUser.getUsername(),
         response.getGameId(), response.getServerSeedHash());
@@ -75,8 +89,8 @@ public class DiceController {
     return ResponseEntity.ok(new BalanceResponse(balance));
   }
 
-  public record DiceGameRequest(BigDecimal betAmount, Integer prediction, DiceResult.BetType betType,
-      String clientSeed) {
+  public record DiceGameRequest(String tempGameId, BigDecimal betAmount, Integer prediction,
+      DiceResult.BetType betType, String clientSeed) {
   }
 
   public record BalanceResponse(BigDecimal balance) {
