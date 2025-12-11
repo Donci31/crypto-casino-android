@@ -29,7 +29,6 @@ import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.BettingArea
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.ChipSelector
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.ErrorMessage
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.PlacedBetsList
-import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.PrepareCommitmentCard
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.ResultDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.RouletteCommittedWaitingDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.roulette.components.RouletteWheelDisplay

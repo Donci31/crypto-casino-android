@@ -35,7 +35,6 @@ import hu.bme.aut.cryptocasino.ui.presentation.dice.components.ClientSeedInput
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.CommittedWaitingDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.DiceDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.PredictionSelector
-import hu.bme.aut.cryptocasino.ui.presentation.dice.components.PrepareCommitmentCard
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.ResultDisplay
 import hu.bme.aut.cryptocasino.ui.presentation.dice.components.VerificationDisplay
 

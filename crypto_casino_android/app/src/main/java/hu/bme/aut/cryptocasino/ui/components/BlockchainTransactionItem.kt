@@ -37,12 +37,7 @@ import androidx.compose.ui.unit.dp
 import hu.bme.aut.cryptocasino.data.model.transaction.BlockchainTransaction
 import hu.bme.aut.cryptocasino.data.model.transaction.TransactionType
 import hu.bme.aut.cryptocasino.data.util.FormatUtils
-import hu.bme.aut.cryptocasino.ui.theme.Amber
-import hu.bme.aut.cryptocasino.ui.theme.Bet
-import hu.bme.aut.cryptocasino.ui.theme.Purple
-import hu.bme.aut.cryptocasino.ui.theme.Success
-import hu.bme.aut.cryptocasino.ui.theme.Warning
-import hu.bme.aut.cryptocasino.ui.theme.Win
+import hu.bme.aut.cryptocasino.ui.theme.ThemeColors
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -55,7 +50,7 @@ fun BlockchainTransactionItem(
             TransactionType.DEPOSIT -> {
                 Triple(
                     Icons.Default.ArrowDownward,
-                    Success,
+                    ThemeColors.success,
                     "Deposit",
                 )
             }
@@ -63,7 +58,7 @@ fun BlockchainTransactionItem(
             TransactionType.WITHDRAWAL -> {
                 Triple(
                     Icons.Default.ArrowUpward,
-                    Warning,
+                    ThemeColors.warning,
                     "Withdrawal",
                 )
             }
@@ -71,7 +66,7 @@ fun BlockchainTransactionItem(
             TransactionType.BET -> {
                 Triple(
                     Icons.Default.Casino,
-                    Bet,
+                    ThemeColors.bet,
                     "Bet",
                 )
             }
@@ -79,7 +74,7 @@ fun BlockchainTransactionItem(
             TransactionType.WIN -> {
                 Triple(
                     Icons.Default.EmojiEvents,
-                    Win,
+                    ThemeColors.win,
                     "Win",
                 )
             }
@@ -87,7 +82,7 @@ fun BlockchainTransactionItem(
             TransactionType.TOKEN_PURCHASED -> {
                 Triple(
                     Icons.Default.ShoppingCart,
-                    Purple,
+                    ThemeColors.purple,
                     "Token Purchased",
                 )
             }
@@ -95,7 +90,7 @@ fun BlockchainTransactionItem(
             TransactionType.TOKEN_EXCHANGED -> {
                 Triple(
                     Icons.Default.SwapHoriz,
-                    Amber,
+                    ThemeColors.amber,
                     "Token Exchanged",
                 )
             }
@@ -177,7 +172,7 @@ fun BlockchainTransactionItem(
                     fontWeight = FontWeight.Bold,
                     color =
                         when (transaction.eventType) {
-                            TransactionType.DEPOSIT, TransactionType.WIN, TransactionType.TOKEN_PURCHASED -> Success
+                            TransactionType.DEPOSIT, TransactionType.WIN, TransactionType.TOKEN_PURCHASED -> ThemeColors.success
                             TransactionType.WITHDRAWAL, TransactionType.BET, TransactionType.TOKEN_EXCHANGED -> color
                         },
                 )

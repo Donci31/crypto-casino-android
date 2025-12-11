@@ -15,11 +15,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import hu.bme.aut.cryptocasino.data.model.stats.UserStatsResponse
 import hu.bme.aut.cryptocasino.data.util.FormatUtils
+import hu.bme.aut.cryptocasino.ui.theme.ThemeColors
 import java.math.BigDecimal
 
 @Composable
@@ -62,7 +62,7 @@ fun GamingStatsSection(stats: UserStatsResponse) {
                 icon = Icons.Default.EmojiEvents,
                 label = "Biggest Win",
                 value = "${FormatUtils.formatCurrency(stats.biggestWin)} CST",
-                valueColor = Color(0xFFFFD700),
+                valueColor = ThemeColors.draculaGold,
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))

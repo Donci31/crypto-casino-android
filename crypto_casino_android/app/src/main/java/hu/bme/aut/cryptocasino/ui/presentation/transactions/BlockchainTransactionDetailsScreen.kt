@@ -54,12 +54,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import hu.bme.aut.cryptocasino.data.model.transaction.BlockchainTransaction
 import hu.bme.aut.cryptocasino.data.model.transaction.TransactionType
 import hu.bme.aut.cryptocasino.data.util.FormatUtils
-import hu.bme.aut.cryptocasino.ui.theme.Amber
-import hu.bme.aut.cryptocasino.ui.theme.Bet
-import hu.bme.aut.cryptocasino.ui.theme.Purple
-import hu.bme.aut.cryptocasino.ui.theme.Success
-import hu.bme.aut.cryptocasino.ui.theme.Warning
-import hu.bme.aut.cryptocasino.ui.theme.Win
+import hu.bme.aut.cryptocasino.ui.theme.ThemeColors
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
@@ -123,12 +118,12 @@ fun TransactionDetailContent(
     val scope = rememberCoroutineScope()
 
     val (icon, color, label) = when (transaction.eventType) {
-        TransactionType.DEPOSIT -> Triple(Icons.Default.ArrowDownward, Success, "Deposit")
-        TransactionType.WITHDRAWAL -> Triple(Icons.Default.ArrowUpward, Warning, "Withdrawal")
-        TransactionType.BET -> Triple(Icons.Default.Casino, Bet, "Bet")
-        TransactionType.WIN -> Triple(Icons.Default.EmojiEvents, Win, "Win")
-        TransactionType.TOKEN_PURCHASED -> Triple(Icons.Default.ShoppingCart, Purple, "Token Purchased")
-        TransactionType.TOKEN_EXCHANGED -> Triple(Icons.Default.SwapHoriz, Amber, "Token Exchanged")
+        TransactionType.DEPOSIT -> Triple(Icons.Default.ArrowDownward, ThemeColors.success, "Deposit")
+        TransactionType.WITHDRAWAL -> Triple(Icons.Default.ArrowUpward, ThemeColors.warning, "Withdrawal")
+        TransactionType.BET -> Triple(Icons.Default.Casino, ThemeColors.bet, "Bet")
+        TransactionType.WIN -> Triple(Icons.Default.EmojiEvents, ThemeColors.win, "Win")
+        TransactionType.TOKEN_PURCHASED -> Triple(Icons.Default.ShoppingCart, ThemeColors.purple, "Token Purchased")
+        TransactionType.TOKEN_EXCHANGED -> Triple(Icons.Default.SwapHoriz, ThemeColors.amber, "Token Exchanged")
     }
 
     Column(

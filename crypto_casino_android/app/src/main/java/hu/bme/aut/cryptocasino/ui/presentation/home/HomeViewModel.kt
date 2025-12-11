@@ -48,8 +48,6 @@ class HomeViewModel @Inject constructor(
 
     private fun loadQuickStats() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
             statsRepository.getQuickStats().collect { result ->
                 when (result) {
                     is ApiResult.Success -> {
@@ -70,7 +68,7 @@ class HomeViewModel @Inject constructor(
                         }
                     }
                     is ApiResult.Loading -> {
-                        _uiState.update { it.copy(isLoading = true) }
+                        _uiState.update { it.copy(isLoading = true, error = null) }
                     }
                 }
             }
@@ -89,6 +87,7 @@ class HomeViewModel @Inject constructor(
                     is ApiResult.Error -> {
                     }
                     is ApiResult.Loading -> {
+                        _uiState.update { it.copy(isLoading = true, error = null) }
                     }
                 }
             }

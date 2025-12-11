@@ -79,12 +79,12 @@ val OnDisabledLight = Color(0xFF6272A4) // Muted text
 
 // Status colors - Light mode (slightly adjusted for contrast)
 val SuccessLight = Color(0xFF2FB358) // Darker green for light bg
-val ErrorLight = Color(0xFFE02F2F) // Darker red for light bg
+val ErrorLight = Color(0xFFB91C1C) // Darker, less bright red for light bg
 val WarningLight = Color(0xFFE89339) // Darker orange for light bg
 val InfoLight = Color(0xFF1A7A8F) // Darker cyan for light bg
 
 // Additional colors for light mode
-val DraculaGoldLight = Color(0xFFD4C021) // Darker yellow for light bg
+val DraculaGoldLight = Color(0xFFB8A000) // Darker yellow for light bg
 val DraculaReelBackgroundLight = Color(0xFFE5E5E0) // Light gray for reel displays
 val DraculaCardBackgroundLight = Color(0xFFF0F0EB) // Very light for cards
 
@@ -92,4 +92,4 @@ val DraculaCardBackgroundLight = Color(0xFFF0F0EB) // Very light for cards
 val PurpleLight = Color(0xFF6E40AA) // Darker purple for TOKEN_PURCHASED
 val AmberLight = Color(0xFFE89339) // Darker orange for TOKEN_EXCHANGED
 val BetLight = Color(0xFF1A7A8F) // Darker cyan for BET
-val WinLight = Color(0xFFD4C021) // Darker yellow for WIN
+val WinLight = Color(0xFFB8A000) // Darker yellow for WIN

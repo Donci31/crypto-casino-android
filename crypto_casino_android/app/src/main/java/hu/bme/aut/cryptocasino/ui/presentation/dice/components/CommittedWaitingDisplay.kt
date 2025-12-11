@@ -39,8 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.bme.aut.cryptocasino.data.model.dice.BetType
-import hu.bme.aut.cryptocasino.ui.theme.Info
-import hu.bme.aut.cryptocasino.ui.theme.Success
+import hu.bme.aut.cryptocasino.ui.theme.ThemeColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -65,8 +64,8 @@ fun CommittedWaitingDisplay(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            color = Info.copy(alpha = 0.15f),
-            border = BorderStroke(1.dp, Info.copy(alpha = 0.4f)),
+            color = ThemeColors.info.copy(alpha = 0.15f),
+            border = BorderStroke(1.dp, ThemeColors.info.copy(alpha = 0.4f)),
         ) {
             Row(
                 modifier =
@@ -79,7 +78,7 @@ fun CommittedWaitingDisplay(
                 Icon(
                     imageVector = Icons.Default.ExpandMore,
                     contentDescription = null,
-                    tint = Info,
+                    tint = ThemeColors.info,
                     modifier =
                         Modifier
                             .size(24.dp)
@@ -90,7 +89,7 @@ fun CommittedWaitingDisplay(
                     text = "Bet committed to blockchain",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Info,
+                    color = ThemeColors.info,
                 )
             }
         }
@@ -122,7 +121,7 @@ fun CommittedWaitingDisplay(
                             Icon(
                                 imageVector = Icons.Default.ExpandMore,
                                 contentDescription = null,
-                                tint = Success,
+                                tint = ThemeColors.success,
                                 modifier =
                                     Modifier
                                         .size(20.dp)
@@ -174,13 +173,13 @@ fun CommittedWaitingDisplay(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = Success.copy(alpha = 0.2f),
+                            color = ThemeColors.success.copy(alpha = 0.2f),
                         ) {
                             Text(
                                 text = "Block #$blockNumber",
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = Success,
+                                color = ThemeColors.success,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             )
                         }
@@ -344,7 +343,7 @@ fun CommittedWaitingDisplay(
                     .height(56.dp),
             colors =
                 ButtonDefaults.buttonColors(
-                    containerColor = Success,
+                    containerColor = ThemeColors.success,
                 ),
             shape = RoundedCornerShape(12.dp),
             elevation =

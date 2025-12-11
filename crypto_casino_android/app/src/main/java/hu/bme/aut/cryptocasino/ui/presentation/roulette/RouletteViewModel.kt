@@ -29,8 +29,6 @@ class RouletteViewModel
 
         fun loadRouletteConfig() {
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, error = null) }
-
                 rouletteRepository.getRouletteConfig().collect { result ->
                     when (result) {
                         is ApiResult.Success -> {
@@ -42,6 +40,7 @@ class RouletteViewModel
                                     houseEdge = config.houseEdge,
                                     selectedChipValue = config.minBet,
                                     isLoading = false,
+                                    error = null
                                 )
                             }
                             loadBalance()
@@ -57,6 +56,7 @@ class RouletteViewModel
                         }
 
                         is ApiResult.Loading -> {
+                            _uiState.update { it.copy(isLoading = true, error = null) }
                         }
                     }
                 }
@@ -174,8 +174,6 @@ class RouletteViewModel
             }
 
             viewModelScope.launch {
-                _uiState.update { it.copy(gamePhase = RouletteGamePhase.PREPARING, error = null, winningNumber = null) }
-
                 rouletteRepository.prepareGame().collect { prepareResult ->
                     when (prepareResult) {
                         is ApiResult.Success -> {
@@ -184,6 +182,8 @@ class RouletteViewModel
                                 currentState.copy(
                                     tempGameId = prepareData.tempGameId,
                                     serverSeedHash = prepareData.serverSeedHash,
+                                    gamePhase = RouletteGamePhase.PREPARING,
+                                    error = null
                                 )
                             }
                         }
@@ -198,6 +198,7 @@ class RouletteViewModel
                         }
 
                         is ApiResult.Loading -> {
+                            _uiState.update { it.copy(gamePhase = RouletteGamePhase.PREPARING, error = null, winningNumber = null) }
                         }
                     }
                 }
@@ -212,8 +213,6 @@ class RouletteViewModel
             }
 
             viewModelScope.launch {
-                _uiState.update { it.copy(gamePhase = RouletteGamePhase.COMMITTING, error = null) }
-
                 val betRequests = state.placedBets.map { it.toRequest() }
                 val tempGameId = state.tempGameId
 
@@ -232,6 +231,7 @@ class RouletteViewModel
                                         currentGameId = createdGame.gameId,
                                         transactionHash = createdGame.transactionHash,
                                         blockNumber = createdGame.blockNumber,
+                                        error = null
                                     )
                                 }
                             }
@@ -247,6 +247,7 @@ class RouletteViewModel
                             }
 
                             is ApiResult.Loading -> {
+                                _uiState.update { it.copy(gamePhase = RouletteGamePhase.COMMITTING, error = null) }
                             }
                         }
                     }
@@ -262,8 +263,6 @@ class RouletteViewModel
 
         private fun settleGame(gameId: Long) {
             viewModelScope.launch {
-                _uiState.update { it.copy(gamePhase = RouletteGamePhase.REVEALING) }
-
                 rouletteRepository.settleGame(gameId).collect { result ->
                     when (result) {
                         is ApiResult.Success -> {
@@ -291,6 +290,7 @@ class RouletteViewModel
                         }
 
                         is ApiResult.Loading -> {
+                            _uiState.update { it.copy(gamePhase = RouletteGamePhase.REVEALING, error = null, winningNumber = null) }
                         }
                     }
                 }

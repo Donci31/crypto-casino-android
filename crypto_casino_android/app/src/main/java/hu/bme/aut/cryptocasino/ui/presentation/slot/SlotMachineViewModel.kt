@@ -28,8 +28,6 @@ class SlotMachineViewModel
 
         fun loadSlotConfig() {
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, error = null) }
-
                 slotMachineRepository.getSlotConfig().collect { result ->
                     when (result) {
                         is ApiResult.Success -> {
@@ -40,6 +38,7 @@ class SlotMachineViewModel
                                     maxBet = config.maxBet,
                                     currentBet = config.minBet,
                                     isLoading = false,
+                                    error = null
                                 )
                             }
                             loadBalance()
@@ -56,7 +55,7 @@ class SlotMachineViewModel
                         }
 
                         is ApiResult.Loading -> {
-                            // Loading state is already set before collection starts
+                            _uiState.update { it.copy(isLoading = true, error = null) }
                         }
                     }
                 }
@@ -81,8 +80,6 @@ class SlotMachineViewModel
 
         fun spin() {
             viewModelScope.launch {
-                _uiState.update { it.copy(isSpinning = true, error = null) }
-
                 slotMachineRepository.spin(_uiState.value.currentBet).collect { result ->
                     when (result) {
                         is ApiResult.Success -> {
@@ -93,7 +90,8 @@ class SlotMachineViewModel
                                     lastSpin = spinResult,
                                     reels = spinResult.reels,
                                     spinCount = currentState.spinCount + 1,
-                                    selectedTab = 0, // Stay on slot machine tab
+                                    selectedTab = 0,
+                                    error = null
                                 )
                             }
                             loadBalance()
@@ -110,7 +108,7 @@ class SlotMachineViewModel
                         }
 
                         is ApiResult.Loading -> {
-                            // Loading state is already set before collection starts
+                            _uiState.update { it.copy(isSpinning = true, error = null) }
                         }
                     }
                 }

@@ -16,14 +16,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import hu.bme.aut.cryptocasino.data.model.stats.QuickStatsResponse
 import hu.bme.aut.cryptocasino.data.util.FormatUtils
-import hu.bme.aut.cryptocasino.ui.theme.Amber
-import hu.bme.aut.cryptocasino.ui.theme.Primary
-import hu.bme.aut.cryptocasino.ui.theme.Secondary
+import hu.bme.aut.cryptocasino.ui.theme.ThemeColors
 
 @Composable
 fun QuickStatsGrid(stats: QuickStatsResponse) {
@@ -46,7 +43,7 @@ fun QuickStatsGrid(stats: QuickStatsResponse) {
                     label = "Games Played",
                     value = stats.totalGamesPlayed.toString(),
                     icon = Icons.Default.Casino,
-                    color = Primary
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -55,7 +52,7 @@ fun QuickStatsGrid(stats: QuickStatsResponse) {
                     label = "Win Rate",
                     value = "${(stats.winRate * 100).toInt()}%",
                     icon = Icons.AutoMirrored.Filled.TrendingUp,
-                    color = Secondary
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
 
@@ -65,7 +62,7 @@ fun QuickStatsGrid(stats: QuickStatsResponse) {
                     value = FormatUtils.formatCurrency(stats.totalWinnings),
                     subtitle = "CST",
                     icon = Icons.Default.AttachMoney,
-                    color = Amber
+                    color = ThemeColors.amber
                 )
             }
 
@@ -75,7 +72,7 @@ fun QuickStatsGrid(stats: QuickStatsResponse) {
                     value = FormatUtils.formatCurrency(stats.biggestWin),
                     subtitle = "CST",
                     icon = Icons.Default.EmojiEvents,
-                    color = Color(0xFFFFD700)
+                    color = ThemeColors.draculaGold
                 )
             }
         }

@@ -29,8 +29,6 @@ class DiceViewModel
 
         fun loadDiceConfig() {
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, error = null) }
-
                 diceRepository.getDiceConfig().collect { result ->
                     when (result) {
                         is ApiResult.Success -> {
@@ -57,6 +55,7 @@ class DiceViewModel
                         }
 
                         is ApiResult.Loading -> {
+                            _uiState.update { it.copy(isLoading = true, error = null) }
                         }
                     }
                 }
@@ -102,8 +101,6 @@ class DiceViewModel
             }
 
             viewModelScope.launch {
-                _uiState.update { it.copy(gamePhase = DiceGamePhase.PREPARING, error = null, result = null, won = null) }
-
                 diceRepository.prepareGame().collect { prepareResult ->
                     when (prepareResult) {
                         is ApiResult.Success -> {
@@ -126,6 +123,7 @@ class DiceViewModel
                         }
 
                         is ApiResult.Loading -> {
+                            _uiState.update { it.copy(gamePhase = DiceGamePhase.PREPARING, error = null, result = null, won = null) }
                         }
                     }
                 }
@@ -140,8 +138,6 @@ class DiceViewModel
             }
 
             viewModelScope.launch {
-                _uiState.update { it.copy(gamePhase = DiceGamePhase.COMMITTING, error = null) }
-
                 val paddedSeed = padClientSeed(state.clientSeed)
                 val tempGameId = state.tempGameId
 
@@ -177,6 +173,7 @@ class DiceViewModel
                             }
 
                             is ApiResult.Loading -> {
+                                _uiState.update { it.copy(gamePhase = DiceGamePhase.COMMITTING, error = null) }
                             }
                         }
                     }
@@ -192,8 +189,6 @@ class DiceViewModel
 
         private fun settleGame(gameId: Long) {
             viewModelScope.launch {
-                _uiState.update { it.copy(gamePhase = DiceGamePhase.REVEALING) }
-
                 diceRepository.settleGame(gameId).collect { result ->
                     when (result) {
                         is ApiResult.Success -> {
@@ -222,6 +217,7 @@ class DiceViewModel
                         }
 
                         is ApiResult.Loading -> {
+                            _uiState.update { it.copy(gamePhase = DiceGamePhase.REVEALING) }
                         }
                     }
                 }
